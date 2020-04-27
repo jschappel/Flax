@@ -37,12 +37,16 @@ fn quit(stmt: &str) -> bool {
 
 
 fn parse_statement(stmt: &str) {
-    let tokens: Vec<lexer::Token> = lexer::lex_line(stmt.to_string());
-    let mut parser = Parser::new(tokens);
-    let expr = parser.parse();
-    let value = ast::interpret2(expr);
-
-    println!("{}", value);
+    match lexer::lex_line(stmt.to_string()) {
+        Ok(tokens) => {
+            let mut parser = Parser::new(tokens);
+            let expr = parser.parse();
+            let value = ast::interpret2(expr);
+            println!("{}", value);
+        
+        },
+        Err(e) => println!("{}", e),
+    }
 }
 
 
