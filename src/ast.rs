@@ -243,7 +243,7 @@ impl Interpreter<Obj> for Expr {
             TokenType::Plus => check_numbers(left, right, TokenType::Plus),
             TokenType::Star => check_numbers(left, right, TokenType::Star),
             TokenType::Slash => check_numbers(left, right, TokenType::Slash),
-            TokenType::PlusPlus => check_strings(left, right),
+            TokenType::PlusPlus => concatenate_values((left, right)),
             TokenType::EqualEqual => determine_equality((left, right), TokenType::EqualEqual),
             TokenType::BangEqual => determine_equality((left, right), TokenType::BangEqual),
             TokenType::Less => determine_int_comparison((left, right), TokenType::Less),
@@ -313,36 +313,26 @@ fn check_numbers(left: Obj, right: Obj, op: TokenType) -> Obj {
 // Two cases:
 // left and right are strings               =>combine the strings 
 // left is a string and right is a int      => combine the string and int into a string
-fn check_strings(left: Obj, right: Obj) -> Obj {
-    if let Obj::STRING(mut v) = left {
-        return match right {
-            Obj::STRING(v2) => {
-               v.push_str(&v2);
-               println!("The string is {}",v);
-               Obj::STRING(v)
-            },
-            Obj::NUMBER(v2) => {
-                v.push_str(&v2.to_string());
-                Obj::STRING(v)
-            },
-            _ => panic!("Invalid literal type"),
+
+fn concatenate_values(pairs: (Obj, Obj)) -> Obj {
+    match pairs {
+        (Obj::STRING(mut v), Obj::STRING(v2)) => {
+            v.push_str(&v2);
+            Obj::STRING(v)
+        },
+        (Obj::STRING(mut v), Obj::NUMBER(v2)) => {
+            v.push_str(&v2.to_string());
+            Obj::STRING(v)
         }
+        (Obj::NUMBER(v), Obj::STRING(v2)) => {
+            let mut s = v.to_string();
+            s.push_str(&v2);
+            Obj::STRING(s)
+        },
+        _ => panic!("Expected two strings or a string an a integer"),
     }
-    else if let Obj::STRING(mut v) = right {
-        return match left {
-            Obj::STRING(v2) => {
-               v.push_str(&v2);
-               Obj::STRING(v)
-            },
-            Obj::NUMBER(v2) => {
-                v.push_str(&v2.to_string());
-                Obj::STRING(v)
-            },
-            _ => panic!("Invalid literal type"),
-        }
-    }
-    panic!("Expected two strings or a string and a int")
 }
+
 
 fn determine_equality(pair: (Obj, Obj), operator: TokenType) -> Obj {
     match operator {

@@ -7,7 +7,7 @@
 
 <binary>        ::= <expression> <operator> <expression>
 
-<unary>        ::= ("-" | "!") <expression>
+<unary>         ::= ("-" | "!") <expression>
 
 <literal>       := NUMBER | STRING | "true" | "false" | "nil"
 
