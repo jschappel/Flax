@@ -40,4 +40,4 @@
 ### Design Choices:
 - Flax follows Ruby's design where all value besides ```false``` and ```nil``` are true
 - Only Integers can compared using ```>```, ```<```, ```>=```, ```<=```
-- Flax uses ```++``` to compare strings just like Haskell
+- Flax uses ```++``` to concatenate strings just like Haskell
