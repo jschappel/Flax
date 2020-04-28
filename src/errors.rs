@@ -17,3 +17,23 @@ impl fmt::Display for LexError {
         write!(f, "{} at line: {}", self.msg, self.line)
     }
 }
+
+
+
+#[derive(Debug)]
+pub struct ParseError {
+    line: u64,
+    msg: String
+}
+
+impl ParseError {
+    pub fn new(msg:String, line: u64,) -> ParseError {
+        ParseError { line, msg }
+    }
+}
+
+impl fmt::Display for ParseError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{} at line: {}", self.msg, self.line)
+    }
+}

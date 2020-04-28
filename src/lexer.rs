@@ -251,12 +251,13 @@ mod test {
 
     #[test]
     fn lex_with_strings() {
-        let tokens = lex_line("\"Hello\" \"hELLo\" \"hello\" \"HELLO\"".to_string()).unwrap();
+        let tokens = lex_line("\"Hello\" \"hELLo\" \"hello\" \"HELLO\" \"\"".to_string()).unwrap();
         let expected = vec![
             Token::new(TokenType::STRING, "Hello".to_string(), 1),
             Token::new(TokenType::STRING, "hELLo".to_string(), 1),
             Token::new(TokenType::STRING, "hello".to_string(), 1),
             Token::new(TokenType::STRING, "HELLO".to_string(), 1),
+            Token::new(TokenType::STRING, "".to_string(), 1),
             Token::new(TokenType::EOF, String::new(), 1),
         ];
         assert_eq!(expected, tokens);

@@ -40,10 +40,13 @@ fn parse_statement(stmt: &str) {
     match lexer::lex_line(stmt.to_string()) {
         Ok(tokens) => {
             let mut parser = Parser::new(tokens);
-            let expr = parser.parse();
-            let value = ast::interpret2(expr);
-            println!("{}", value);
-        
+            match parser.parse() {
+                Ok(expr) => {
+                    let value = ast::interpret2(expr);
+                    println!("{}", value);
+                },
+                Err(e) => println!("{}", e),
+            }
         },
         Err(e) => println!("{}", e),
     }
