@@ -8,8 +8,8 @@ use parser::{Parser};
 
 
 pub fn run_repl() {
-    println!("Welcome to Flax!");
-
+    println!("Welcome to Flax! v0.1");
+    let mut mode = ReplMode::Normal;
     loop {
         let mut buffer = String::new();
         print!(">>>");
@@ -17,21 +17,29 @@ pub fn run_repl() {
         let _stdin = io::stdin().read_line(&mut buffer).unwrap();
         let buffer = buffer.trim();
 
-        // Check if we need to quit
-        if quit(buffer) { 
-            println!("Goodbye");
-            break; 
-        }
-
-        parse_statement(buffer);
-
+        // Evaluate the command
+        match buffer {
+            ":quit" => {
+                println!("Goodbye");
+                break; 
+            },
+            ":debug" => {
+                mode = ReplMode::Debug;
+                println!("Now in Debug Mode");
+            },
+            ":normal" => {
+                mode = ReplMode::Normal;
+                println!("Now in normal mode");
+            },
+            _ => evaluate(buffer, &mode),
+        }       
     }
 }
 
-fn quit(stmt: &str) -> bool {
-    match stmt {
-        ":quit" => true,
-        _ => false
+fn evaluate(stmt: &str, repl_mode: &ReplMode) {
+    match repl_mode {
+        ReplMode::Normal => parse_statement(stmt),
+        ReplMode::Debug => debug_parse_statement(stmt),
     }
 }
 
@@ -52,6 +60,26 @@ fn parse_statement(stmt: &str) {
     }
 }
 
+// Debug mode prints the ast
+fn debug_parse_statement(stmt: &str) {
+    match lexer::lex_line(stmt.to_string()) {
+        Ok(tokens) => {
+            let mut parser = Parser::new(tokens);
+            match parser.parse() {
+                Ok(expr) => {
+                    println!("{}", expr);
+                },
+                Err(e) => println!("{}", e),
+            }
+        },
+        Err(e) => println!("{}", e),
+    }
+}
+
+#[derive(PartialEq)]
+enum ReplMode {
+    Normal, Debug
+}
 
 // **IMPORTANT **
 
