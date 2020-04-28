@@ -2,13 +2,13 @@ use std::io;
 use std::io::Write;
 
 use crate::lexer;
-use crate::ast;
+use crate::interpreter;
 use crate::parser;
 use parser::{Parser};
 use colored::*;
 
 pub fn run_repl() {
-    println!("Welcome to Flax! v0.1");
+    println!("{}", "Welcome to Flax! v0.1".purple());
     let mut mode = ReplMode::Normal;
     loop {
         let mut buffer = String::new();
@@ -20,7 +20,7 @@ pub fn run_repl() {
         // Evaluate the command
         match buffer {
             ":quit" => {
-                println!("Goodbye");
+                println!("{}", "Goodbye".purple());
                 break; 
             },
             ":debug" => {
@@ -50,7 +50,7 @@ fn parse_statement(stmt: &str) {
             let mut parser = Parser::new(tokens);
             match parser.parse() {
                 Ok(expr) => {
-                    let value = ast::interpret2(expr);
+                    let value = interpreter::interpret_ast(expr);
                     println!("{}", value);
                 },
                 Err(e) => println!("{}", e.to_string().red()),
