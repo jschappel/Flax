@@ -1,4 +1,5 @@
 use std::fmt;
+use std::error::Error;
 // A Lex Error is an error that the Lexer can throw 
 #[derive(Debug)]
 pub struct LexError {
@@ -25,7 +26,7 @@ pub struct RuntimeError {
 
 
 impl RuntimeError {
-    fn new(op: String, msg: String, line: u64) -> RuntimeError {
+    pub fn new(op: String, msg: String, line: u64) -> RuntimeError {
         RuntimeError { operator: op, msg: msg, line: line }
     }
 }
@@ -33,6 +34,13 @@ impl RuntimeError {
 impl fmt::Display for RuntimeError {
     fn fmt(&self, f: &mut fmt::Formatter<>) -> fmt::Result {
         write!(f, "[Runtime Error at line {}]: {}", self.line, self.msg)
+    }
+}
+
+impl Error for RuntimeError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        // Generic error, underlying cause isn't tracked.
+        None
     }
 }
 
