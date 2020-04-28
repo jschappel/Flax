@@ -162,7 +162,7 @@ fn get_number<I: Iterator<Item=char>>(line_num: u64, it: &mut Peekable<I>) -> To
     let mut num = String::new();
     while let Some(val) = it.peek() {
         match val {
-            '0'..='9' => {
+            '0'..='9' | '.' => {
                 num.push(*val);
                 it.next();
             }
@@ -203,6 +203,19 @@ mod test {
             Token::new(TokenType::NUMBER, "9".to_string(), 1),
             Token::new(TokenType::Slash, "/".to_string(), 1),
             Token::new(TokenType::NUMBER, "4".to_string(), 1),
+            Token::new(TokenType::EOF, String::new(), 1),
+        ];
+
+        assert_eq!(expected, tokens);
+    }
+
+    #[test]
+    fn lex_numbers() {
+        let tokens = lex_line("12 3 67.89".to_string()).unwrap();
+        let expected = vec![
+            Token::new(TokenType::NUMBER, "12".to_string(), 1),
+            Token::new(TokenType::NUMBER, "3".to_string(), 1),
+            Token::new(TokenType::NUMBER, "67.89".to_string(), 1),
             Token::new(TokenType::EOF, String::new(), 1),
         ];
 

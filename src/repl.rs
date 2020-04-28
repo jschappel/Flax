@@ -51,7 +51,10 @@ fn parse_statement(stmt: &str) {
             match parser.parse() {
                 Ok(expr) => {
                     let value = interpreter::interpret_ast(expr);
-                    println!("{}", value);
+                    match value {
+                        Ok(value) => println!("{}", value),
+                        Err(e) => println!("{}", e.to_string().red()),
+                    }
                 },
                 Err(e) => println!("{}", e.to_string().red()),
             }
