@@ -5,7 +5,7 @@ use crate::lexer;
 use crate::ast;
 use crate::parser;
 use parser::{Parser};
-
+use colored::*;
 
 pub fn run_repl() {
     println!("Welcome to Flax! v0.1");
@@ -25,11 +25,11 @@ pub fn run_repl() {
             },
             ":debug" => {
                 mode = ReplMode::Debug;
-                println!("Now in Debug Mode");
+                println!("{}", "Now in debug mode".yellow());
             },
             ":normal" => {
                 mode = ReplMode::Normal;
-                println!("Now in normal mode");
+                println!("{}", "Now in normal mode".yellow());
             },
             _ => evaluate(buffer, &mode),
         }       
@@ -53,10 +53,10 @@ fn parse_statement(stmt: &str) {
                     let value = ast::interpret2(expr);
                     println!("{}", value);
                 },
-                Err(e) => println!("{}", e),
+                Err(e) => println!("{}", e.to_string().red()),
             }
         },
-        Err(e) => println!("{}", e),
+        Err(e) => println!("{}", e.to_string().red()),
     }
 }
 
@@ -69,10 +69,10 @@ fn debug_parse_statement(stmt: &str) {
                 Ok(expr) => {
                     println!("{}", expr);
                 },
-                Err(e) => println!("{}", e),
+                Err(e) => println!("{}", e.to_string().red()),
             }
         },
-        Err(e) => println!("{}", e),
+        Err(e) => println!("{}", e.to_string().red()),
     }
 }
 
