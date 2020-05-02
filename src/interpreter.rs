@@ -1,4 +1,4 @@
-use crate::ast::{Binary, Unary, Literal, Grouping, ExprType, Expr};
+use crate::ast::{Binary, Unary, Literal, Grouping, Expr};
 use crate::errors::{RuntimeError};
 use crate::lexer::{TokenType, Token};
 use std::fmt;
@@ -47,21 +47,21 @@ pub trait Interpreter<R> {
 
 
 pub fn interpret_ast(expression: Expr) -> Result<Obj, RuntimeError> {
-    match expression.expr {
-        ExprType::B(ref val) => expression.visit_binary(val),
-        ExprType::G(ref val) => expression.visit_grouping(val),
-        ExprType::L(ref val) => expression.visit_literal(val),
-        ExprType::U(ref val) => expression.visit_unary(val),
+    match expression {
+        Expr::B(ref val) => expression.visit_binary(val),
+        Expr::G(ref val) => expression.visit_grouping(val),
+        Expr::L(ref val) => expression.visit_literal(val),
+        Expr::U(ref val) => expression.visit_unary(val),
     }
 }
 
 macro_rules! evaluate {
     ($e:expr, $sel:ident) => {
         match &$e {
-            ExprType::L(lit) => lit.accept($sel),
-            ExprType::B(ref b_expr) => b_expr.accept($sel),
-            ExprType::U(ref u_expr) => u_expr.accept($sel),
-            ExprType::G(ref g_expr) => g_expr.accept($sel),
+            Expr::L(lit) => lit.accept($sel),
+            Expr::B(ref b_expr) => b_expr.accept($sel),
+            Expr::U(ref u_expr) => u_expr.accept($sel),
+            Expr::G(ref g_expr) => g_expr.accept($sel),
         }?;
     }
 }
@@ -88,14 +88,9 @@ impl fmt::Display for Obj {
 impl Interpreter<Obj> for Expr {
     fn visit_binary(&self, binary: &Binary) -> Result<Obj, RuntimeError> {
 
-        // let right: Obj = match binary.right.expr {
-        //     ExprType::L(lit) => lit.accept(self),
-        //     ExprType::B(ref b_expr) => b_expr.accept(self),
-        //     ExprType::U(ref u_expr) => u_expr.accept(self),
-        //     ExprType::G(ref g_expr) => g_expr.accept(self),
-        // }?
-        let right: Obj = evaluate!(binary.right.expr, self);
-        let left: Obj = evaluate!(binary.left.expr, self);
+
+        let right: Obj = evaluate!(binary.right, self);
+        let left: Obj = evaluate!(binary.left, self);
         
         match binary.operator.token_type {
             TokenType::Minus => check_numbers((left, right), &binary.operator),
@@ -114,7 +109,7 @@ impl Interpreter<Obj> for Expr {
     }
 
     fn visit_unary(&self, unary: &Unary) -> Result<Obj, RuntimeError> {
-        let expr: Obj = evaluate!(unary.expr.expr, self);
+        let expr: Obj = evaluate!(unary.expr, self);
 
         match unary.operator.token_type {
             TokenType::Minus => {
@@ -132,7 +127,7 @@ impl Interpreter<Obj> for Expr {
         if literal.val.parse::<f64>().is_ok() {
             Ok(Obj::NUMBER(literal.val.parse::<f64>().unwrap()))
         }
-        else if literal.val.parse::<bool>().is_ok() {
+        else if literal.val.parse::<bool>().is_ok() && literal.val != "true" && literal.val != "false" {
             Ok(Obj::BOOL(literal.val.parse::<bool>().unwrap()))
         }
         else if literal.val.parse::<String>().is_ok() {
@@ -150,7 +145,7 @@ impl Interpreter<Obj> for Expr {
     }
 
     fn visit_grouping(&self, grouping: &Grouping) -> Result<Obj, RuntimeError> {
-        Ok(evaluate!(grouping.expr.expr, self))
+        Ok(evaluate!(grouping.expr, self))
     }
 }
 

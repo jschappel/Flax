@@ -74,7 +74,7 @@ fn lex(line: String, line_num: u64) -> Result<Vec<Token>, LexError> {
     while let Some(c) = it.peek() {
         match c {
             '0'..='9' => add_token(get_number(line_num, &mut it), &mut tokens),
-            '"' => add_token(get_string(line_num, &mut it), &mut tokens),
+            '"' => add_token(get_string(line_num, &mut it)?, &mut tokens),
             '(' => add_and_consume(Token::new(TokenType::LeftParen, c.to_string(), line_num), &mut tokens, &mut it),
             ')' => add_and_consume(Token::new(TokenType::RightParen, c.to_string(), line_num), &mut tokens, &mut it),
             '-' => add_and_consume(Token::new(TokenType::Minus, c.to_string(), line_num), &mut tokens, &mut it),
@@ -119,10 +119,18 @@ fn check_ahead_and_add<I: Iterator<Item=char>>(tokens: &mut Vec<Token>, line_num
 }
 
 
-fn get_string<I: Iterator<Item=char>>(line_num: u64, it: &mut Peekable<I>) -> Token {
+fn get_string<I: Iterator<Item=char>>(line_num: u64, it: &mut Peekable<I>) -> Result<Token, LexError> {
     it.next(); // Consume the leading "
-    let string = it.take_while(|c| *c != '"').collect::<String>();
-    Token::new(TokenType::STRING, string, line_num)
+    let mut res = String::new();
+    while let Some(c) = it.peek() {
+        if *c == '"' {
+            it.next();
+            return Ok(Token::new(TokenType::STRING, res, line_num))
+        }
+        res.push(*c);
+        it.next();
+    }
+    Err(LexError::new(line_num, res))
 }
 
 fn take_op<I: Iterator<Item=char>>(it: &mut Peekable<I>) -> String {

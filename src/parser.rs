@@ -48,7 +48,7 @@ impl Parser {
                     let operator = self.current_token().clone();
                     self.consume();
                     let right = self.comparison()?;
-                    left = Expr::new_binary_expr(Binary::new(operator, left, right));
+                    left = Expr::new_binary(left, operator, right);
                 },
                 _ => break,
             }
@@ -64,7 +64,7 @@ impl Parser {
                     let operator = self.current_token().clone();
                     self.consume();
                     let right = self.addition()?;
-                    left = Expr::new_binary_expr(Binary::new(operator, left, right));
+                    left = Expr::new_binary(left, operator, right);
                 },
                 _ => break,
             }
@@ -80,7 +80,7 @@ impl Parser {
                     let operator = self.current_token().clone();
                     self.consume();
                     let right = self.multiplication()?;
-                    expr = Expr::new_binary_expr(Binary::new(operator, expr , right));    
+                    expr = Expr::new_binary(expr, operator, right);    
                 },
                 _ => break,
             }
@@ -96,7 +96,7 @@ impl Parser {
                     let operator = self.current_token().clone();
                     self.consume();
                     let right = self.unary()?;
-                    expr = Expr::new_binary_expr(Binary::new(operator, expr, right))
+                    expr = Expr::new_binary(expr, operator, right);
                 },
                 _ => break,
             }
@@ -111,7 +111,7 @@ impl Parser {
                 let operator = self.current_token().clone();
                 self.consume();
                 let expr = self.unary()?;
-                Ok(Expr::new_unary_expr(Unary::new(operator, expr)))
+                Ok(Expr::new_unary(operator, expr))
             },
             _ => self.literal(),
         }   
@@ -122,22 +122,22 @@ impl Parser {
         let token = self.current_token();
         match token.token_type {
             TokenType::NUMBER => {
-                let e = Expr::new_literal_expr(Literal::new(token.lexeme.clone()));
+                let e = Expr::new_literal(token.lexeme.clone());
                 self.consume();
                 Ok(e)
             },
             TokenType::STRING => {
-                let e = Expr::new_literal_expr(Literal::new(token.lexeme.clone()));
+                let e = Expr::new_literal(token.lexeme.clone());
                 self.consume();
                 Ok(e)
             },
             TokenType::TRUE | TokenType::FALSE => {
-                let e = Expr::new_literal_expr(Literal::new(token.lexeme.clone()));
+                let e = Expr::new_literal(token.lexeme.clone());
                 self.consume();
                 Ok(e)
             },
             TokenType::Nil => {
-                let e = Expr::new_literal_expr(Literal::new(token.lexeme.clone()));
+                let e = Expr::new_literal(token.lexeme.clone());
                 self.consume();
                 Ok(e)
             },
@@ -146,7 +146,7 @@ impl Parser {
                 self.consume();
                 let expr: Expr = self.expression()?;
                 match self.consume_right_paren() {
-                    Ok(_) => Ok(Expr::new_grouping_expr(Grouping::new(expr))),
+                    Ok(_) => Ok(Expr::new_grouping(expr)),
                     Err(lexeme) => Err(ParseError::new(format!("Expected ')' given {}", lexeme), self.current_token().line)),
                 }
             },

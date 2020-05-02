@@ -6,35 +6,33 @@ use std::fmt::{ Display };
 
 
 /// An Expression can be one of the below types
+/// L: Literal
+/// U: Unary
+/// B: Binary
+/// G: Grouping
 #[derive(Debug)]
-pub enum ExprType {
+pub enum Expr {
     L(Literal),
     U(Box<Unary>),
     B(Box<Binary>),
     G(Box<Grouping>),
 }
 
-#[derive(Debug)]
-pub struct Expr {
-    pub expr: ExprType
-}
-
 impl Expr {
-    
-    pub fn new_binary_expr(bin_expr: Binary) -> Expr {
-        Expr { expr: ExprType::B(Box::new(bin_expr)) }
+    pub fn new_literal(val: String) -> Expr {
+        Expr::L(Literal::new(val))
     }
 
-    pub fn new_literal_expr(literal: Literal) -> Expr {
-        Expr { expr: ExprType::L(literal) }
+    pub fn new_unary(op: Token, expr: Expr) -> Expr {
+        Expr::U(Box::new(Unary::new(op, expr)))
     }
 
-    pub fn new_unary_expr(unary: Unary) -> Expr {
-        Expr { expr: ExprType::U(Box::new(unary)) }
+    pub fn new_binary(left: Expr, op: Token, right: Expr) -> Expr {
+        Expr::B(Box::new(Binary::new(op, left, right)))
     }
 
-    pub fn new_grouping_expr(grouping: Grouping) -> Expr {
-        Expr { expr: ExprType::G(Box::new(grouping)) }
+    pub fn new_grouping(expr: Expr) -> Expr {
+        Expr::G(Box::new(Grouping::new(expr)))
     }
 }
 
@@ -103,10 +101,14 @@ impl Unary {
 // Implement Display for each struct in the Abstract Syntax Tree so we can debug the tree if needed
 impl Display for Expr {
     fn fmt(&self, f: &mut fmt::Formatter<>) -> fmt::Result {
-        write!(f, "{}", self.expr)
+        match self {
+            Expr::L(lit) => write!(f, "{}", lit),
+            Expr::U(ur) => write!(f, "{}", ur),
+            Expr::B(bi) => write!(f, "{}", bi),
+            Expr::G(grp) => write!(f, "{}", grp),
+        }
     }
 }
-
 
 impl Display for Grouping {
     fn fmt(&self, f: &mut fmt::Formatter<>) -> fmt::Result {
@@ -133,13 +135,4 @@ impl Display for Unary {
 }
 
 
-impl Display for ExprType {
-    fn fmt(&self, f: &mut fmt::Formatter<>) -> fmt::Result {
-        match self {
-            ExprType::L(lit) => write!(f, "{}", lit),
-            ExprType::U(ur) => write!(f, "{}", ur),
-            ExprType::B(bi) => write!(f, "{}", bi),
-            ExprType::G(grp) => write!(f, "{}", grp),
-        }
-    }
-}
+

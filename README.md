@@ -9,7 +9,9 @@
 
 <unary>         ::= ("-" | "!") <expression>
 
-<literal>       := NUMBER | STRING | "true" | "false" | "nil"
+<literal>       ::= NUMBER | STRING | "true" | "false" | "nil"
+
+<grouping>      ::= "(" <expression> ")"
 
 <operator>      := "==" | "++" | "+" | "-" | "*" | "/" |
                    ">=" | "<=" | ">" | "<"
