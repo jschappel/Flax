@@ -44,7 +44,7 @@ impl Token {
 
 #[allow(dead_code)]
 pub fn lex_file(filename: &str) -> Result<Vec<Token>, LexError> {
-    let file = File::open(filename).unwrap();
+    let file = File::open(filename).expect("Unable to file file");
     let buf_reader = BufReader::new(file);
     let mut tokens = Vec::new();
     let mut max = 0;
