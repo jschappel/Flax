@@ -60,7 +60,8 @@ fn parse_statement(stmt: &str) {
             let mut parser = Parser::new(tokens);
             match parser.parse() {
                 Ok(statements) => {
-                    let result = interpreter::interpret(statements);
+                    let mut interpreter = interpreter::Interpreter::new();
+                    let result = interpreter.interpret(statements);
                     match result {
                         Err(e) => println!("{}", e.to_string().red()),
                         _ => (),
@@ -80,7 +81,8 @@ fn parse_file(filename: &str) {
             let mut parser = Parser::new(tokens);
             match parser.parse() {
                 Ok(statements) => {
-                    let result = interpreter::interpret(statements);
+                    let mut interpreter = interpreter::Interpreter::new();
+                    let result = interpreter.interpret(statements);
                     match result {
                         Err(e) => println!("{}", e.to_string().red()),
                         _ => (),

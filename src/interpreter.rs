@@ -1,53 +1,80 @@
 use crate::ast::{Binary, Unary, Literal, Grouping, Expr, Stmt};
 use crate::errors::{RuntimeError};
 use crate::lexer::{TokenType, Token};
+use crate::environment::{ Environment };
 use std::fmt;
+
+pub struct Interpreter {
+    environment: Environment
+}
+
+impl Interpreter {
+    pub fn new() -> Interpreter {
+        Interpreter { environment: Environment::new() }
+    }
+
+    pub fn interpret(&mut self, statements: Vec<Stmt>) -> Result<(), RuntimeError> {
+        for statement in statements {
+            match statement {
+                Stmt::ExprStmt(expr) => {
+                    expr.visit_expr(&expr)?;
+                },
+                Stmt::PrintStmt(expr) => {
+                    let e = expr.visit_expr(&expr)?;
+                    println!("{}", e);
+                },
+            }
+        }
+        Ok(())
+    }
+}
+
 
 
 /// Implement a Visitor for each struct in the Abstract Syntax Tree
 pub trait Visitor<E>  {
-    fn accept<R, V: Interpreter<R>>(&self, visitor: &V) -> Result<R, E>;
+    fn accept<R, V: Interp<R>>(&self, visitor: &V) -> Result<R, E>;
 }
 
 impl Visitor<RuntimeError> for Unary {
-    fn accept<R, V: Interpreter<R>>(&self, visitor: &V) -> Result<R, RuntimeError> {
+    fn accept<R, V: Interp<R>>(&self, visitor: &V) -> Result<R, RuntimeError> {
         visitor.visit_unary(self)
     }
 }
 
 impl Visitor<RuntimeError> for Literal {
-    fn accept<R, V: Interpreter<R>>(&self, visitor: &V) -> Result<R, RuntimeError> {
+    fn accept<R, V: Interp<R>>(&self, visitor: &V) -> Result<R, RuntimeError> {
         visitor.visit_literal(self)
     }
 }
 
 impl Visitor<RuntimeError> for Binary {
-    fn accept<R, V: Interpreter<R>>(&self, visitor: &V) -> Result<R, RuntimeError> {
+    fn accept<R, V: Interp<R>>(&self, visitor: &V) -> Result<R, RuntimeError> {
         visitor.visit_binary(self)
     }
 }
 
 impl Visitor<RuntimeError> for Grouping {
-    fn accept<R, V: Interpreter<R>>(&self, visitor: &V) -> Result<R, RuntimeError> {
+    fn accept<R, V: Interp<R>>(&self, visitor: &V) -> Result<R, RuntimeError> {
         visitor.visit_grouping(self)
     }
 }
 
 impl Visitor<RuntimeError> for Stmt {
-    fn accept<R, V: Interpreter<R>>(&self, visitor: &V) -> Result<R, RuntimeError> {
+    fn accept<R, V: Interp<R>>(&self, visitor: &V) -> Result<R, RuntimeError> {
        visitor.visit_stmt(self)
     }
 }
 
 impl Visitor<RuntimeError> for Expr {
-    fn accept<R, V: Interpreter<R>>(&self, visitor: &V) -> Result<R, RuntimeError> {
+    fn accept<R, V: Interp<R>>(&self, visitor: &V) -> Result<R, RuntimeError> {
         visitor.visit_expr(self)
     }
 }
 
 
 
-pub trait Interpreter<R> {
+pub trait Interp<R> {
     fn visit_binary(&self, binary: &Binary) -> Result<R, RuntimeError>;
     fn visit_unary(&self, unary: &Unary) -> Result<R, RuntimeError>;
     fn visit_literal(&self, literal: &Literal) -> Result<R, RuntimeError>;
@@ -58,30 +85,13 @@ pub trait Interpreter<R> {
 
 
 
-pub fn interpret_ast_expr(expression: Expr) -> Result<Obj, RuntimeError> {
+pub fn interpret_ast_expr(expression: Expr) -> Result<Value, RuntimeError> {
     match expression {
         Expr::B(ref val) => expression.visit_binary(val),
         Expr::G(ref val) => expression.visit_grouping(val),
         Expr::L(ref val) => expression.visit_literal(val),
         Expr::U(ref val) => expression.visit_unary(val),
     }
-}
-
-
-pub fn interpret(statements: Vec<Stmt>) -> Result<(), RuntimeError> {
-
-    for statement in statements {
-        match statement {
-            Stmt::ExprStmt(expr) => {
-                expr.visit_expr(&expr)?;
-            },
-            Stmt::PrintStmt(expr) => {
-                let e = expr.visit_expr(&expr)?;
-                println!("{}", e);
-            },
-        }
-    }
-    Ok(())
 }
 
 macro_rules! evaluate {
@@ -96,30 +106,30 @@ macro_rules! evaluate {
 }
 
 #[derive(PartialEq, Debug)]
-pub enum Obj {
+pub enum Value {
     BOOL(bool),
     STRING(String),
     NUMBER(f64),
     Nil,
 }
 
-impl fmt::Display for Obj {
+impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter<>) -> fmt::Result {
         match self {
-            Obj::BOOL(val) => write!(f, "{}", val),
-            Obj::Nil => write!(f, "nil"),
-            Obj::STRING(val) => write!(f, "\"{}\"", val),
-            Obj::NUMBER(val) => write!(f, "{}", val),
+            Value::BOOL(val) => write!(f, "{}", val),
+            Value::Nil => write!(f, "nil"),
+            Value::STRING(val) => write!(f, "\"{}\"", val),
+            Value::NUMBER(val) => write!(f, "{}", val),
         }
     }
 }
 
-impl Interpreter<Obj> for Expr {
-    fn visit_binary(&self, binary: &Binary) -> Result<Obj, RuntimeError> {
+impl Interp<Value> for Expr {
+    fn visit_binary(&self, binary: &Binary) -> Result<Value, RuntimeError> {
 
 
-        let right: Obj = evaluate!(binary.right, self);
-        let left: Obj = evaluate!(binary.left, self);
+        let right: Value = evaluate!(binary.right, self);
+        let left: Value = evaluate!(binary.left, self);
         
         match binary.operator.token_type {
             TokenType::Minus => check_numbers((left, right), &binary.operator),
@@ -137,35 +147,35 @@ impl Interpreter<Obj> for Expr {
         }
     }
 
-    fn visit_unary(&self, unary: &Unary) -> Result<Obj, RuntimeError> {
-        let expr: Obj = evaluate!(unary.expr, self);
+    fn visit_unary(&self, unary: &Unary) -> Result<Value, RuntimeError> {
+        let expr: Value = evaluate!(unary.expr, self);
 
         match unary.operator.token_type {
             TokenType::Minus => {
-                if let Obj::NUMBER(v) = expr {
-                   return Ok(Obj::NUMBER(-1.0 * v));
+                if let Value::NUMBER(v) = expr {
+                   return Ok(Value::NUMBER(-1.0 * v));
                 }
                 Err(RuntimeError::new(unary.operator.lexeme.clone(), "Invalid unary expression.  Expected Number".to_string(), unary.operator.line))
             },
-            TokenType::Bang => Ok(Obj::BOOL(!is_truthy(expr))),
+            TokenType::Bang => Ok(Value::BOOL(!is_truthy(expr))),
             _ => Err(RuntimeError::new(unary.operator.lexeme.clone(), "Invalid token for Unary".to_string(), unary.operator.line)),
         }
     }
 
-    fn visit_literal(&self, literal: &Literal) -> Result<Obj, RuntimeError> {        
+    fn visit_literal(&self, literal: &Literal) -> Result<Value, RuntimeError> {        
         if literal.val.parse::<f64>().is_ok() {
-            Ok(Obj::NUMBER(literal.val.parse::<f64>().unwrap()))
+            Ok(Value::NUMBER(literal.val.parse::<f64>().unwrap()))
         }
         else if literal.val.parse::<bool>().is_ok() && literal.val != "true" && literal.val != "false" {
-            Ok(Obj::BOOL(literal.val.parse::<bool>().unwrap()))
+            Ok(Value::BOOL(literal.val.parse::<bool>().unwrap()))
         }
         else if literal.val.parse::<String>().is_ok() {
             let s = literal.val.parse::<String>().unwrap();
             match &s[..] {
-                "nil" => Ok(Obj::Nil),
-                "true" => Ok(Obj::BOOL(true)),
-                "false" => Ok(Obj::BOOL(false)),
-                _ => Ok(Obj::STRING(s)),
+                "nil" => Ok(Value::Nil),
+                "true" => Ok(Value::BOOL(true)),
+                "false" => Ok(Value::BOOL(false)),
+                _ => Ok(Value::STRING(s)),
             }
         }
         else {
@@ -173,17 +183,17 @@ impl Interpreter<Obj> for Expr {
         }
     }
 
-    fn visit_grouping(&self, grouping: &Grouping) -> Result<Obj, RuntimeError> {
+    fn visit_grouping(&self, grouping: &Grouping) -> Result<Value, RuntimeError> {
         Ok(evaluate!(grouping.expr, self))
     }
 
-    fn visit_stmt(&self, stmt: &Stmt) -> Result<Obj, RuntimeError> {
+    fn visit_stmt(&self, stmt: &Stmt) -> Result<Value, RuntimeError> {
         match stmt {
             Stmt::ExprStmt(expr) => self.visit_expr(expr),
             Stmt::PrintStmt(expr) => self.visit_expr(expr),
         }
     }
-    fn visit_expr(&self, expr: &Expr) -> Result<Obj, RuntimeError> {
+    fn visit_expr(&self, expr: &Expr) -> Result<Value, RuntimeError> {
         match expr {
             Expr::L(e) => self.visit_literal(e),
             Expr::U(e) => self.visit_unary(e),
@@ -194,14 +204,14 @@ impl Interpreter<Obj> for Expr {
 }
 
 
-fn check_numbers(paris: (Obj, Obj), op: &Token) -> Result<Obj, RuntimeError> {
+fn check_numbers(paris: (Value, Value), op: &Token) -> Result<Value, RuntimeError> {
     match paris {
-        (Obj::NUMBER(left), Obj::NUMBER(right)) => {
+        (Value::NUMBER(left), Value::NUMBER(right)) => {
             match op.token_type {
-                TokenType::Minus => Ok(Obj::NUMBER(left - right)),
-                TokenType::Plus => Ok(Obj::NUMBER(left + right)),
-                TokenType::Star => Ok(Obj::NUMBER(left * right)),
-                TokenType::Slash => Ok(Obj::NUMBER(left / right)),
+                TokenType::Minus => Ok(Value::NUMBER(left - right)),
+                TokenType::Plus => Ok(Value::NUMBER(left + right)),
+                TokenType::Star => Ok(Value::NUMBER(left * right)),
+                TokenType::Slash => Ok(Value::NUMBER(left / right)),
                 _ => Err(RuntimeError::new(op.lexeme.clone(), format!("Invalid binary operator for numbers, given {}", op.lexeme), op.line)),
             }
         }
@@ -212,58 +222,58 @@ fn check_numbers(paris: (Obj, Obj), op: &Token) -> Result<Obj, RuntimeError> {
 // Two cases:
 // left and right are strings               =>combine the strings 
 // left is a string and right is a int      => combine the string and int into a string
-fn concatenate_values(pairs: (Obj, Obj), token: &Token) -> Result<Obj, RuntimeError> {
+fn concatenate_values(pairs: (Value, Value), token: &Token) -> Result<Value, RuntimeError> {
     match pairs {
-        (Obj::STRING(mut v), Obj::STRING(v2)) => {
+        (Value::STRING(mut v), Value::STRING(v2)) => {
             v.push_str(&v2);
-            Ok(Obj::STRING(v))
+            Ok(Value::STRING(v))
         },
-        (Obj::STRING(mut v), Obj::NUMBER(v2)) => {
+        (Value::STRING(mut v), Value::NUMBER(v2)) => {
             v.push_str(&v2.to_string());
-            Ok(Obj::STRING(v))
+            Ok(Value::STRING(v))
         }
-        (Obj::NUMBER(v), Obj::STRING(v2)) => {
+        (Value::NUMBER(v), Value::STRING(v2)) => {
             let mut s = v.to_string();
             s.push_str(&v2);
-            Ok(Obj::STRING(s))
+            Ok(Value::STRING(s))
         },
         _ => Err(RuntimeError::new(token.lexeme.clone(), format!("'{}' can only be applied to String and Numbers, given: {}, {}", token.lexeme, pairs.0, pairs.1), token.line)),
     }
 }
 
 
-fn determine_equality(pair: (Obj, Obj), token: &Token) -> Result<Obj, RuntimeError> {
+fn determine_equality(pair: (Value, Value), token: &Token) -> Result<Value, RuntimeError> {
     match token.token_type {
         TokenType::EqualEqual => {
              match pair {
-                (Obj::BOOL(v), Obj::BOOL(v2)) => Ok(Obj::BOOL(v == v2)),
-                (Obj::Nil, Obj::Nil) => Ok(Obj::BOOL(true)),
-                (Obj::STRING(v), Obj::STRING(v2)) => Ok(Obj::BOOL(v == v2)),
-                (Obj::NUMBER(v), Obj::NUMBER(v2)) => Ok(Obj::BOOL(v == v2)),
-                _ => Ok(Obj::BOOL(false)),
+                (Value::BOOL(v), Value::BOOL(v2)) => Ok(Value::BOOL(v == v2)),
+                (Value::Nil, Value::Nil) => Ok(Value::BOOL(true)),
+                (Value::STRING(v), Value::STRING(v2)) => Ok(Value::BOOL(v == v2)),
+                (Value::NUMBER(v), Value::NUMBER(v2)) => Ok(Value::BOOL(v == v2)),
+                _ => Ok(Value::BOOL(false)),
             }
         },
         TokenType::BangEqual => {
             match pair {
-                (Obj::BOOL(v), Obj::BOOL(v2)) =>Ok(Obj::BOOL(v != v2)),
-                (Obj::Nil, Obj::Nil) => Ok(Obj::BOOL(false)),
-                (Obj::STRING(v), Obj::STRING(v2)) => Ok(Obj::BOOL(v != v2)),
-                (Obj::NUMBER(v), Obj::NUMBER(v2)) => Ok(Obj::BOOL(v != v2)),
-                _ => Ok(Obj::BOOL(true)),
+                (Value::BOOL(v), Value::BOOL(v2)) =>Ok(Value::BOOL(v != v2)),
+                (Value::Nil, Value::Nil) => Ok(Value::BOOL(false)),
+                (Value::STRING(v), Value::STRING(v2)) => Ok(Value::BOOL(v != v2)),
+                (Value::NUMBER(v), Value::NUMBER(v2)) => Ok(Value::BOOL(v != v2)),
+                _ => Ok(Value::BOOL(true)),
             }
         },
         _ => Err(RuntimeError::new(token.lexeme.clone(), "Invalid token type. Expected '==' or '!='.".to_string(), token.line)),
     }
 }
 
-fn determine_int_comparison(pair: (Obj, Obj), token: &Token) -> Result<Obj, RuntimeError> {
+fn determine_int_comparison(pair: (Value, Value), token: &Token) -> Result<Value, RuntimeError> {
     match pair {
-        (Obj::NUMBER(val), Obj::NUMBER(val2)) => {
+        (Value::NUMBER(val), Value::NUMBER(val2)) => {
             match token.token_type {
-                TokenType::Less => Ok(Obj::BOOL(val < val2)),
-                TokenType::LessEqual => Ok(Obj::BOOL(val <= val2)),
-                TokenType::Greater => Ok(Obj::BOOL(val > val2)),
-                TokenType::GreaterEqual => Ok(Obj::BOOL(val >= val2)),
+                TokenType::Less => Ok(Value::BOOL(val < val2)),
+                TokenType::LessEqual => Ok(Value::BOOL(val <= val2)),
+                TokenType::Greater => Ok(Value::BOOL(val > val2)),
+                TokenType::GreaterEqual => Ok(Value::BOOL(val >= val2)),
                 _ => panic!("Expected boolean values")
             } 
         }, 
@@ -273,9 +283,9 @@ fn determine_int_comparison(pair: (Obj, Obj), token: &Token) -> Result<Obj, Runt
 
 // Determines if  a value is truthy or falsy
 // Important: Flax follows Ruby's rule: everything but False and nil are true
-fn is_truthy(value: Obj) -> bool {
+fn is_truthy(value: Value) -> bool {
     match value {
-        Obj::BOOL(false) | Obj::Nil => false,
+        Value::BOOL(false) | Value::Nil => false,
         _ => true,
     }
 }
