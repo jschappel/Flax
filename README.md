@@ -1,5 +1,15 @@
 ### Core Grammar
 ```shell
+
+<program>       ::= <statement>*
+
+<statement>     ::= <printStmt>
+                 | <exprStmt>
+
+<printStmt>     ::= "print" expression ";"
+
+<exprStmt>      ::= expression ";"
+
 <expression>    ::= <binary>
                  | <unary>
                  | <grouping>
@@ -13,7 +23,7 @@
 
 <grouping>      ::= "(" <expression> ")"
 
-<operator>      := "==" | "++" | "+" | "-" | "*" | "/" |
+<operator>      ::= "==" | "++" | "+" | "-" | "*" | "/" |
                    ">=" | "<=" | ">" | "<"
 
 ```

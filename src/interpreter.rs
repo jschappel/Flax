@@ -1,4 +1,4 @@
-use crate::ast::{Binary, Unary, Literal, Grouping, Expr};
+use crate::ast::{Binary, Unary, Literal, Grouping, Expr, Stmt};
 use crate::errors::{RuntimeError};
 use crate::lexer::{TokenType, Token};
 use std::fmt;
@@ -33,26 +33,55 @@ impl Visitor<RuntimeError> for Grouping {
     }
 }
 
+impl Visitor<RuntimeError> for Stmt {
+    fn accept<R, V: Interpreter<R>>(&self, visitor: &V) -> Result<R, RuntimeError> {
+       visitor.visit_stmt(self)
+    }
+}
 
-
-pub trait Interpreter<R> {
-
-    fn visit_binary(&self, binary: &Binary) -> Result<R, RuntimeError>;
-    fn visit_unary(&self, unary: &Unary) -> Result<R, RuntimeError>;
-    fn visit_literal(&self, literal: &Literal) -> Result<R, RuntimeError>;
-    fn visit_grouping(&self, grouping: &Grouping) -> Result<R, RuntimeError>;
-
+impl Visitor<RuntimeError> for Expr {
+    fn accept<R, V: Interpreter<R>>(&self, visitor: &V) -> Result<R, RuntimeError> {
+        visitor.visit_expr(self)
+    }
 }
 
 
 
-pub fn interpret_ast(expression: Expr) -> Result<Obj, RuntimeError> {
+pub trait Interpreter<R> {
+    fn visit_binary(&self, binary: &Binary) -> Result<R, RuntimeError>;
+    fn visit_unary(&self, unary: &Unary) -> Result<R, RuntimeError>;
+    fn visit_literal(&self, literal: &Literal) -> Result<R, RuntimeError>;
+    fn visit_grouping(&self, grouping: &Grouping) -> Result<R, RuntimeError>;
+    fn visit_stmt(&self, stmt: &Stmt) -> Result<R, RuntimeError>;
+    fn visit_expr(&self, expr: &Expr) -> Result<R, RuntimeError>;
+}
+
+
+
+pub fn interpret_ast_expr(expression: Expr) -> Result<Obj, RuntimeError> {
     match expression {
         Expr::B(ref val) => expression.visit_binary(val),
         Expr::G(ref val) => expression.visit_grouping(val),
         Expr::L(ref val) => expression.visit_literal(val),
         Expr::U(ref val) => expression.visit_unary(val),
     }
+}
+
+
+pub fn interpret(statements: Vec<Stmt>) -> Result<(), RuntimeError> {
+
+    for statement in statements {
+        match statement {
+            Stmt::ExprStmt(expr) => {
+                expr.visit_expr(&expr)?;
+            },
+            Stmt::PrintStmt(expr) => {
+                let e = expr.visit_expr(&expr)?;
+                println!("{}", e);
+            },
+        }
+    }
+    Ok(())
 }
 
 macro_rules! evaluate {
@@ -146,6 +175,21 @@ impl Interpreter<Obj> for Expr {
 
     fn visit_grouping(&self, grouping: &Grouping) -> Result<Obj, RuntimeError> {
         Ok(evaluate!(grouping.expr, self))
+    }
+
+    fn visit_stmt(&self, stmt: &Stmt) -> Result<Obj, RuntimeError> {
+        match stmt {
+            Stmt::ExprStmt(expr) => self.visit_expr(expr),
+            Stmt::PrintStmt(expr) => self.visit_expr(expr),
+        }
+    }
+    fn visit_expr(&self, expr: &Expr) -> Result<Obj, RuntimeError> {
+        match expr {
+            Expr::L(e) => self.visit_literal(e),
+            Expr::U(e) => self.visit_unary(e),
+            Expr::G(e) => self.visit_grouping(e),
+            Expr::B(e) => self.visit_binary(e),
+        }
     }
 }
 

@@ -5,6 +5,21 @@ use std::fmt::{ Display };
 /// SEE README.md for core grammar
 
 
+
+/// A Statement does not evaluate a value, it instead creates  a side effect
+/// A Statement can be one of the following
+/// 1) PrintStmt: evaluates an expression and prints it to the console (TEMPORARY)
+/// 2) ExprStmt: evaluates an expression
+pub enum Stmt {
+    PrintStmt(Expr),
+    ExprStmt(Expr),
+}
+
+
+
+
+
+
 /// An Expression can be one of the below types
 /// L: Literal
 /// U: Unary
@@ -131,6 +146,15 @@ impl Display for Literal {
 impl Display for Unary {
     fn fmt(&self, f: &mut fmt::Formatter<>) -> fmt::Result {
         write!(f, "({} {})", self.operator, self.expr)
+    }
+}
+
+impl Display for Stmt {
+    fn fmt(&self, f: &mut fmt::Formatter<>) -> fmt::Result {
+        match self {
+            Stmt::ExprStmt(expr) => write!(f, "{}", expr),
+            Stmt::PrintStmt(expr) => write!(f, "{}", expr),
+        }
     }
 }
 

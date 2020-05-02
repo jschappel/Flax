@@ -9,13 +9,13 @@ use crate::errors::LexError;
 pub enum TokenType {
     // operators 
     Plus, Minus, Star, Slash, EqualEqual, Equal, PlusPlus, Greater, Less,
-     GreaterEqual, LessEqual, Bang, BangEqual,
+     GreaterEqual, LessEqual, Bang, BangEqual, Semicolon,
 
     // Grouping
     LeftParen, RightParen,
 
     // Keywords
-    Identifier,
+    Identifier, Print,
 
     // Prims
     NUMBER, STRING, TRUE, FALSE, Nil,
@@ -80,6 +80,7 @@ fn lex(line: String, line_num: u64) -> Result<Vec<Token>, LexError> {
             '-' => add_and_consume(Token::new(TokenType::Minus, c.to_string(), line_num), &mut tokens, &mut it),
             '*' => add_and_consume(Token::new(TokenType::Star, c.to_string(), line_num), &mut tokens, &mut it),
             '/' => add_and_consume(Token::new(TokenType::Slash, c.to_string(), line_num), &mut tokens, &mut it),
+            ';' => add_and_consume(Token::new(TokenType::Semicolon, c.to_string(), line_num), &mut tokens, &mut it),
             '+' => check_ahead_and_add(&mut tokens, line_num, &mut it)?,
             '=' => check_ahead_and_add(&mut tokens, line_num, &mut it)?,
             '!' => check_ahead_and_add(&mut tokens, line_num, &mut it)?,
@@ -157,6 +158,7 @@ fn determine_identifier(s: &String) -> TokenType {
         "true" => TokenType::TRUE,
         "false" => TokenType::FALSE,
         "nil" => TokenType::Nil,
+        "print" => TokenType::Print,
         _ => TokenType::Identifier,
     }
 }
@@ -204,13 +206,14 @@ mod test {
 
     #[test]
     fn lex_mult_and_div() {
-        let tokens = lex_line("3 * 9 / 4".to_string()).unwrap();
+        let tokens = lex_line("3 * 9 / 4;".to_string()).unwrap();
         let expected = vec![
             Token::new(TokenType::NUMBER, "3".to_string(), 1),
             Token::new(TokenType::Star, "*".to_string(), 1),
             Token::new(TokenType::NUMBER, "9".to_string(), 1),
             Token::new(TokenType::Slash, "/".to_string(), 1),
             Token::new(TokenType::NUMBER, "4".to_string(), 1),
+            Token::new(TokenType::Semicolon, ";".to_string(), 1),
             Token::new(TokenType::EOF, String::new(), 1),
         ];
 
@@ -316,6 +319,16 @@ mod test {
             Token::new(TokenType::Identifier, "x".to_string(), 1),
             Token::new(TokenType::Identifier, "y".to_string(), 1),
             Token::new(TokenType::Identifier, "z".to_string(), 1),
+            Token::new(TokenType::EOF, String::new(), 1),
+        ];
+        assert_eq!(expected, tokens);
+    }
+
+    #[test]
+    fn reserved_identifiers() {
+        let tokens = lex_line("print".to_string()).unwrap();
+        let expected = vec![
+            Token::new(TokenType::Print, "print".to_string(), 1),
             Token::new(TokenType::EOF, String::new(), 1),
         ];
         assert_eq!(expected, tokens);

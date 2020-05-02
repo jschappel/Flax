@@ -49,15 +49,25 @@ fn parse_statement(stmt: &str) {
         Ok(tokens) => {
             let mut parser = Parser::new(tokens);
             match parser.parse() {
-                Ok(expr) => {
-                    let value = interpreter::interpret_ast(expr);
-                    match value {
-                        Ok(value) => println!("{}", value),
+                Ok(statements) => {
+                    let result = interpreter::interpret(statements);
+                    match result {
                         Err(e) => println!("{}", e.to_string().red()),
+                        _ => (),
                     }
                 },
-                Err(e) => println!("{}", e.to_string().red()),
+                Err(e) => println!("{}", e.to_string().red())
             }
+            // match parser.parse_expression() {
+            //     Ok(expr) => {
+            //         let value = interpreter::interpret_ast_expr(expr);
+            //         match value {
+            //             Ok(value) => println!("{}", value),
+            //             Err(e) => println!("{}", e.to_string().red()),
+            //         }
+            //     },
+            //     Err(e) => println!("{}", e.to_string().red()),
+            // }
         },
         Err(e) => println!("{}", e.to_string().red()),
     }
@@ -68,7 +78,7 @@ fn debug_parse_statement(stmt: &str) {
     match lexer::lex_line(stmt.to_string()) {
         Ok(tokens) => {
             let mut parser = Parser::new(tokens);
-            match parser.parse() {
+            match parser.parse_expression() {
                 Ok(expr) => {
                     println!("{}", expr);
                 },

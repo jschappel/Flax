@@ -2,7 +2,7 @@ use crate::ast;
 use crate::lexer;
 use crate::errors;
 use errors::ParseError;
-use ast::{ Binary, Unary, Literal, Expr, Grouping };
+use ast::{Expr, Stmt};
 use lexer::{ Token, TokenType };
 /** Precedence      Operators           Associates
  * unary               -                   right
@@ -31,8 +31,46 @@ impl Parser {
         Parser { tokens, index: 0 }
     }
 
-    pub fn parse(&mut self) -> Result<Expr, ParseError> {
+    pub fn parse(&mut self) -> Result<Vec<Stmt>, ParseError> {
+        let mut statements = Vec::new();
+        while !self.isAtEnd() {
+            statements.push(self.statement()?)
+        }
+        Ok(statements)
+    }
+
+    pub fn parse_expression(&mut self) -> Result<Expr, ParseError> {
         self.expression()
+    }
+
+    fn statement(&mut self) -> Result<Stmt, ParseError> {
+        match self.current_token().token_type {
+            TokenType::Print => self.print_statement(),
+            _ => self.expression_statement(),
+        }
+    }
+
+    fn print_statement(&mut self) -> Result<Stmt, ParseError> {
+        self.consume(); // consume the print token
+        let expr: Expr = self.expression()?;
+        match self.current_token().token_type {
+            TokenType::Semicolon => {
+                self.consume();
+                Ok(Stmt::PrintStmt(expr))
+            },
+            _ => Err(ParseError::new("Expected ';'".to_string(), self.current_token().line)),
+        }
+    }
+
+    fn expression_statement(&mut self) -> Result<Stmt, ParseError> {
+        let expr: Expr = self.expression()?;
+        match self.current_token().token_type {
+            TokenType::Semicolon => {
+                self.consume();
+                Ok(Stmt::ExprStmt(expr))
+            },
+            _ => Err(ParseError::new("Expected ';'".to_string(), self.current_token().line)),
+        }
     }
 
     fn expression(&mut self) -> Result<Expr, ParseError> {
@@ -183,6 +221,10 @@ impl Parser {
         if self.current_token().token_type != TokenType::EOF {
             self.index += 1;
         }
+    }
+
+    fn isAtEnd(&mut self) -> bool { 
+        self.current_token().token_type == TokenType::EOF
     }
 }
 
