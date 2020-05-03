@@ -1,7 +1,12 @@
 ### Core Grammar
 ```shell
 
-<program>       ::= <statement>*
+<program>       ::= <declaration>* EOF
+
+<declaration>   ::= <varDecl>
+                 | <statement>
+
+<varDecl>       ::= "var" IDENTIFIER ( "=" <expression> )? ";"
 
 <statement>     ::= <printStmt>
                  | <exprStmt>
@@ -45,6 +50,7 @@
 
 <literal>           ::= NUMBER | STRING | true | false | nil
                      | "(" <expression> ")" 
+                     | IDENTIFIER
 ```
 
 

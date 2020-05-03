@@ -15,7 +15,7 @@ pub enum TokenType {
     LeftParen, RightParen,
 
     // Keywords
-    Identifier, Print,
+    Identifier, Print, Let,
 
     // Prims
     NUMBER, STRING, TRUE, FALSE, Nil,
@@ -147,7 +147,20 @@ fn take_op<I: Iterator<Item=char>>(it: &mut Peekable<I>) -> String {
 }
 
 fn add_identifier<I: Iterator<Item=char>>(tokens: &mut Vec<Token>, line_num: u64, it: &mut Peekable<I>) -> Result<(), LexError> {
-    let identifier = it.take_while(|c| ('A'..='Z').contains(c) || ('a'..='z').contains(c)).collect::<String>();
+
+    let mut identifier = String::new();
+    while let Some(c) = it.peek() {
+        match c {
+            'A'..='Z' | 'a'..='z' => {
+                identifier.push(*c)
+            },
+            _ => break,
+        }
+        it.next();
+    }
+    if identifier == String::new() {
+        return Err(LexError::new(line_num, "Invalid identifier".to_string()));
+    }
     let identifier_type = determine_identifier(&identifier);
     add_token(Token::new(identifier_type, identifier, line_num), tokens);
     Ok(())
@@ -159,6 +172,7 @@ fn determine_identifier(s: &String) -> TokenType {
         "false" => TokenType::FALSE,
         "nil" => TokenType::Nil,
         "print" => TokenType::Print,
+        "let" => TokenType::Let,
         _ => TokenType::Identifier,
     }
 }
@@ -313,12 +327,13 @@ mod test {
 
     #[test]
     fn variable_identifiers() {
-        let tokens = lex_line("josh x y z".to_string()).unwrap();
+        let tokens = lex_line("josh x y z;".to_string()).unwrap();
         let expected = vec![
             Token::new(TokenType::Identifier, "josh".to_string(), 1),
             Token::new(TokenType::Identifier, "x".to_string(), 1),
             Token::new(TokenType::Identifier, "y".to_string(), 1),
             Token::new(TokenType::Identifier, "z".to_string(), 1),
+            Token::new(TokenType::Semicolon, ";".to_string(), 1),
             Token::new(TokenType::EOF, String::new(), 1),
         ];
         assert_eq!(expected, tokens);
@@ -326,9 +341,10 @@ mod test {
 
     #[test]
     fn reserved_identifiers() {
-        let tokens = lex_line("print".to_string()).unwrap();
+        let tokens = lex_line("print let".to_string()).unwrap();
         let expected = vec![
             Token::new(TokenType::Print, "print".to_string(), 1),
+            Token::new(TokenType::Let, "let".to_string(), 1),
             Token::new(TokenType::EOF, String::new(), 1),
         ];
         assert_eq!(expected, tokens);

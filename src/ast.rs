@@ -13,6 +13,7 @@ use std::fmt::{ Display };
 pub enum Stmt {
     PrintStmt(Expr),
     ExprStmt(Expr),
+    VarDecl(Token, Option<Expr>)
 }
 
 
@@ -31,6 +32,7 @@ pub enum Expr {
     U(Box<Unary>),
     B(Box<Binary>),
     G(Box<Grouping>),
+    V(Token),
 }
 
 impl Expr {
@@ -48,6 +50,10 @@ impl Expr {
 
     pub fn new_grouping(expr: Expr) -> Expr {
         Expr::G(Box::new(Grouping::new(expr)))
+    }
+
+    pub fn new_variable(token: Token) -> Expr {
+        Expr::V(token)
     }
 }
 
@@ -121,6 +127,7 @@ impl Display for Expr {
             Expr::U(ur) => write!(f, "{}", ur),
             Expr::B(bi) => write!(f, "{}", bi),
             Expr::G(grp) => write!(f, "{}", grp),
+            Expr::V(tok) => write!(f, "{}", tok.lexeme)
         }
     }
 }
@@ -154,6 +161,12 @@ impl Display for Stmt {
         match self {
             Stmt::ExprStmt(expr) => write!(f, "{}", expr),
             Stmt::PrintStmt(expr) => write!(f, "{}", expr),
+            Stmt::VarDecl(name, expr) => {
+                match expr {
+                    Some(e) => write!(f, "(name = {})", e),
+                    None => write!(f, "({})", name.lexeme),
+                }
+            }
         }
     }
 }

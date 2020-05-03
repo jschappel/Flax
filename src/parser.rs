@@ -34,7 +34,7 @@ impl Parser {
     pub fn parse(&mut self) -> Result<Vec<Stmt>, ParseError> {
         let mut statements = Vec::new();
         while !self.isAtEnd() {
-            statements.push(self.statement()?)
+            statements.push(self.declaration()?)
         }
         Ok(statements)
     }
@@ -42,6 +42,29 @@ impl Parser {
     pub fn parse_expression(&mut self) -> Result<Expr, ParseError> {
         self.expression()
     }
+
+    //TODO: synchronize the parser here
+    fn declaration(&mut self) -> Result<Stmt, ParseError> {
+        match self.current_token().token_type {
+            TokenType::Let => {
+                self.consume();
+                self.var_declaration()
+            },
+            _ => self.statement(),
+        }
+    }
+
+    fn var_declaration(&mut self) -> Result<Stmt, ParseError> {
+        let identifier = self.check_and_consume(TokenType::Identifier, "Expected variable name")?;
+        let mut initializer = None;
+        if self.current_token().token_type == TokenType::Equal {
+            self.consume();
+            initializer = Some(self.expression()?);
+        }
+        self.check_and_consume(TokenType::Semicolon, "Expected ';' after variable declaration")?;
+        Ok(Stmt::VarDecl(identifier, initializer))
+    }
+
 
     fn statement(&mut self) -> Result<Stmt, ParseError> {
         match self.current_token().token_type {
@@ -179,6 +202,11 @@ impl Parser {
                 self.consume();
                 Ok(e)
             },
+            TokenType::Identifier => {
+                let e = Expr::new_variable(token.clone());
+                self.consume();
+                Ok(e)
+            },
             // Error handling cases below
             TokenType::LeftParen => {
                 self.consume();
@@ -221,6 +249,15 @@ impl Parser {
         if self.current_token().token_type != TokenType::EOF {
             self.index += 1;
         }
+    }
+
+    fn check_and_consume(&mut self, tok_type: TokenType, message: &str) -> Result<Token, ParseError> {
+        if self.current_token().token_type == tok_type {
+            let token = self.current_token().clone();
+            self.consume();
+            return Ok(token)
+        }
+        return Err(ParseError::new(message.to_string(), self.current_token().line));
     }
 
     fn isAtEnd(&mut self) -> bool { 
