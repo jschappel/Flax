@@ -4,6 +4,9 @@ use crate::lexer::{TokenType, Token};
 use crate::environment::{ Environment };
 use std::fmt;
 
+
+
+
 pub struct Interpreter {
     environment: Environment
 }
@@ -15,15 +18,7 @@ impl Interpreter {
 
     pub fn interpret(&mut self, statements: Vec<Stmt>) -> Result<(), RuntimeError> {
         for statement in statements {
-            match statement {
-                Stmt::ExprStmt(expr) => {
-                    expr.visit_expr(&expr)?;
-                },
-                Stmt::PrintStmt(expr) => {
-                    let e = expr.visit_expr(&expr)?;
-                    println!("{}", e);
-                },
-            }
+            statement.evaluate(self, &mut self.environment.clone())?;
         }
         Ok(())
     }
@@ -31,6 +26,140 @@ impl Interpreter {
 
 
 
+macro_rules! evaluate2 {
+    ($e:expr, $int:expr, $env:expr) => {
+        match &$e {
+            Expr::L(lit) => lit.evaluate($int, $env),
+            Expr::B(ref b_expr) => b_expr.evaluate($int, $env),
+            Expr::U(ref u_expr) => u_expr.evaluate($int, $env),
+            Expr::G(ref g_expr) => g_expr.evaluate($int, $env),
+        }?;
+    }
+}
+
+
+pub trait Visit {
+    fn evaluate(&self, interpreter: &mut Interpreter, env: &mut Environment) -> Result<Value, RuntimeError>;
+}
+
+
+impl Visit for Stmt {
+    fn evaluate(&self, interpreter: &mut Interpreter, env: &mut Environment) -> Result<Value, RuntimeError> {
+        match self {
+            Stmt::PrintStmt(expr) => {
+                let value: Value = expr.evaluate(interpreter, env)?;
+                println!("{}", value);
+                Ok(value)
+            },
+            Stmt::ExprStmt(expr) => expr.evaluate(interpreter, env), 
+        }
+    }
+}
+
+
+impl Visit for Expr {
+    fn evaluate(&self, interpreter: &mut Interpreter, env: &mut Environment) -> Result<Value, RuntimeError> {
+        match self {
+            Expr::L(ref inside_val) => inside_val.evaluate(interpreter, env),
+            Expr::B(ref inside_val) => inside_val.evaluate(interpreter, env),
+            Expr::U(ref inside_val) => inside_val.evaluate(interpreter, env),
+            Expr::G(ref inside_val) => inside_val.evaluate(interpreter, env),
+        }
+    }
+}
+
+impl Visit for Literal {
+    fn evaluate(&self, _interpreter: &mut Interpreter, _env: &mut Environment) -> Result<Value, RuntimeError> {
+        if self.val.parse::<f64>().is_ok() {
+            Ok(Value::NUMBER(self.val.parse::<f64>().unwrap()))
+        }
+        else if self.val.parse::<bool>().is_ok() && self.val != "true" && self.val != "false" {
+            Ok(Value::BOOL(self.val.parse::<bool>().unwrap()))
+        }
+        else if self.val.parse::<String>().is_ok() {
+            let s = self.val.parse::<String>().unwrap();
+            match &s[..] {
+                "nil" => Ok(Value::Nil),
+                "true" => Ok(Value::BOOL(true)),
+                "false" => Ok(Value::BOOL(false)),
+                _ => Ok(Value::STRING(s)),
+            }
+        }
+        else {
+            Err(RuntimeError::new(String::new(), format!("Invalid literal value, given: {}", self.val), 1)) //TODO:Better Error handling
+        }
+    }
+}
+
+impl Visit for Binary {
+    fn evaluate(&self, interpreter: &mut Interpreter, env: &mut Environment) -> Result<Value, RuntimeError> {
+        let right: Value = evaluate2!(self.left, interpreter, env);
+        let left: Value = evaluate2!(self.left, interpreter, env);
+        
+        match self.operator.token_type {
+            TokenType::Minus => check_numbers((left, right), &self.operator),
+            TokenType::Plus => check_numbers((left, right), &self.operator),
+            TokenType::Star => check_numbers((left, right), &self.operator),
+            TokenType::Slash => check_numbers((left, right), &self.operator),
+            TokenType::PlusPlus => concatenate_values((left, right), &self.operator),
+            TokenType::EqualEqual => determine_equality((left, right), &self.operator),
+            TokenType::BangEqual => determine_equality((left, right), &self.operator),
+            TokenType::Less => determine_int_comparison((left, right), &self.operator),
+            TokenType::LessEqual => determine_int_comparison((left, right), &self.operator),
+            TokenType::Greater => determine_int_comparison((left, right), &self.operator),
+            TokenType::GreaterEqual => determine_int_comparison((left, right), &self.operator),
+            _ => Err(RuntimeError::new(self.operator.lexeme.clone(), format!("Expected expression, given {}", self.operator.lexeme), self.operator.line)),
+        }
+    }
+}
+
+impl Visit for Unary {
+    fn evaluate(&self, interpreter: &mut Interpreter, env: &mut Environment) -> Result<Value, RuntimeError> {
+        let expr: Value = evaluate2!(self.expr, interpreter, env);
+
+        match self.operator.token_type {
+            TokenType::Minus => {
+                if let Value::NUMBER(v) = expr {
+                   return Ok(Value::NUMBER(-1.0 * v));
+                }
+                Err(RuntimeError::new(self.operator.lexeme.clone(), "Invalid unary expression.  Expected Number".to_string(), self.operator.line))
+            },
+            TokenType::Bang => Ok(Value::BOOL(!is_truthy(expr))),
+            _ => Err(RuntimeError::new(self.operator.lexeme.clone(), "Invalid token for Unary".to_string(), self.operator.line)),
+        }
+    }
+}
+
+impl Visit for Grouping {
+    fn evaluate(&self, interpreter: &mut Interpreter, env: &mut Environment) -> Result<Value, RuntimeError> {
+        Ok(evaluate2!(self.expr, interpreter, env))
+    }
+}
+
+
+#[derive(PartialEq, Debug, Clone)]
+pub enum Value {
+    BOOL(bool),
+    STRING(String),
+    NUMBER(f64),
+    Nil,
+}
+
+
+impl fmt::Display for Value {
+    fn fmt(&self, f: &mut fmt::Formatter<>) -> fmt::Result {
+        match self {
+            Value::BOOL(val) => write!(f, "{}", val),
+            Value::Nil => write!(f, "nil"),
+            Value::STRING(val) => write!(f, "\"{}\"", val),
+            Value::NUMBER(val) => write!(f, "{}", val),
+        }
+    }
+}
+
+
+
+/*
 /// Implement a Visitor for each struct in the Abstract Syntax Tree
 pub trait Visitor<E>  {
     fn accept<R, V: Interp<R>>(&self, visitor: &V) -> Result<R, E>;
@@ -85,14 +214,15 @@ pub trait Interp<R> {
 
 
 
-pub fn interpret_ast_expr(expression: Expr) -> Result<Value, RuntimeError> {
-    match expression {
-        Expr::B(ref val) => expression.visit_binary(val),
-        Expr::G(ref val) => expression.visit_grouping(val),
-        Expr::L(ref val) => expression.visit_literal(val),
-        Expr::U(ref val) => expression.visit_unary(val),
-    }
+
+#[derive(PartialEq, Debug)]
+pub enum Value {
+    BOOL(bool),
+    STRING(String),
+    NUMBER(f64),
+    Nil,
 }
+
 
 macro_rules! evaluate {
     ($e:expr, $sel:ident) => {
@@ -103,14 +233,6 @@ macro_rules! evaluate {
             Expr::G(ref g_expr) => g_expr.accept($sel),
         }?;
     }
-}
-
-#[derive(PartialEq, Debug)]
-pub enum Value {
-    BOOL(bool),
-    STRING(String),
-    NUMBER(f64),
-    Nil,
 }
 
 impl fmt::Display for Value {
@@ -202,7 +324,7 @@ impl Interp<Value> for Expr {
         }
     }
 }
-
+*/
 
 fn check_numbers(paris: (Value, Value), op: &Token) -> Result<Value, RuntimeError> {
     match paris {
@@ -289,3 +411,4 @@ fn is_truthy(value: Value) -> bool {
         _ => true,
     }
 }
+

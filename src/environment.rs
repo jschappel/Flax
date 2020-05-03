@@ -1,10 +1,11 @@
 use std::collections::HashMap;
 use crate::interpreter::Value;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Environment {
     values: HashMap<String, Value>
 }
+
 
 impl Environment {
     pub fn new() -> Environment {
