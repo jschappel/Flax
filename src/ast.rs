@@ -33,6 +33,7 @@ pub enum Expr {
     B(Box<Binary>),
     G(Box<Grouping>),
     V(Token),
+    A(Token, Box<Expr>)
 }
 
 impl Expr {
@@ -54,6 +55,10 @@ impl Expr {
 
     pub fn new_variable(token: Token) -> Expr {
         Expr::V(token)
+    }
+
+    pub fn new_assignment(token: Token, expr: Expr) -> Expr {
+        Expr::A(token, Box::new(expr))
     }
 }
 
@@ -127,7 +132,8 @@ impl Display for Expr {
             Expr::U(ur) => write!(f, "{}", ur),
             Expr::B(bi) => write!(f, "{}", bi),
             Expr::G(grp) => write!(f, "{}", grp),
-            Expr::V(tok) => write!(f, "{}", tok.lexeme)
+            Expr::V(tok) => write!(f, "{}", tok.lexeme),
+            Expr::A(_, expr) => write!(f, "{}", expr),
         }
     }
 }

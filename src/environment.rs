@@ -27,4 +27,13 @@ impl Environment {
             None => Err(RuntimeError::new(token.lexeme.clone(), "Undefined Variable".to_string(), token.line))
         }
     }
+
+    pub fn assign(&mut self, token: &Token, value: Value) -> Result<(), RuntimeError> {
+        let name = token.lexeme.clone();
+        if self.values.contains_key(&name) {
+            self.values.insert(name, value);
+            return Ok(());
+        }
+        Err(RuntimeError::new(token.lexeme.clone(), "Undefined Variable".to_string(), token.line))
+    }
 }

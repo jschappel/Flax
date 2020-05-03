@@ -35,7 +35,10 @@
 
 #### Expanded Expression Grammar
 ```shell
-<expression>        ::= <equality>
+<expression>        ::= <assignment>
+
+<assignment>        ::= IDENTIFIER "=" assignment
+                     | <equality>
 
 <equality>          ::= <comparison> ( ( '==' | '!=' ) <comparison> )*
 

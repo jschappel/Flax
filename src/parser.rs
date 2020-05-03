@@ -97,7 +97,22 @@ impl Parser {
     }
 
     fn expression(&mut self) -> Result<Expr, ParseError> {
-        self.equality()
+        self.assignment()
+    }
+
+    fn assignment(&mut self) -> Result<Expr, ParseError> {
+        let expr = self.equality()?;
+
+        if self.current_token().token_type == TokenType::Equal {
+            self.consume();
+            let value = self.assignment()?;
+
+            if let Expr::V(tok) = expr {
+                return Ok(Expr::new_assignment(tok, value));
+            }
+            return Err(ParseError::new("Invalid assignment target".to_string(), self.current_token().line));
+        }
+        Ok(expr)
     }
 
 
@@ -203,6 +218,7 @@ impl Parser {
                 Ok(e)
             },
             TokenType::Identifier => {
+                println!("Here");
                 let e = Expr::new_variable(token.clone());
                 self.consume();
                 Ok(e)

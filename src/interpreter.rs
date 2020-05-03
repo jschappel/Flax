@@ -30,6 +30,10 @@ impl Interpreter {
     fn get_global_var(&mut self, token: &Token) -> Result<Value, RuntimeError> {
         self.environment.get(token)
     }
+
+    fn update_global(&mut self, token: &Token, value: Value) -> Result<(), RuntimeError> {
+        self.environment.assign(token, value)
+    }
 }
 
 
@@ -70,6 +74,11 @@ impl Visit for Expr {
             Expr::U(ref inside_val) => inside_val.evaluate(interpreter, env),
             Expr::G(ref inside_val) => inside_val.evaluate(interpreter, env),
             Expr::V(ref token)      => interpreter.get_global_var(token),
+            Expr::A(ref token, expr)=> {
+                let value = expr.evaluate(interpreter, env)?;
+                interpreter.update_global(token, value.clone())?;
+                Ok(value)
+            }
         }
     }
 }

@@ -188,10 +188,10 @@ fn get_number<I: Iterator<Item=char>>(line_num: u64, it: &mut Peekable<I>) -> To
         match val {
             '0'..='9' | '.' => {
                 num.push(*val);
-                it.next();
             }
             _ => break,
         }
+        it.next();
     }
     Token::new(TokenType::NUMBER, num, line_num)
 }
@@ -345,6 +345,20 @@ mod test {
         let expected = vec![
             Token::new(TokenType::Print, "print".to_string(), 1),
             Token::new(TokenType::Let, "let".to_string(), 1),
+            Token::new(TokenType::EOF, String::new(), 1),
+        ];
+        assert_eq!(expected, tokens);
+    }
+
+    #[test]
+    fn lex_statement() {
+        let tokens = lex_line("print a = 4;".to_string()).unwrap();
+        let expected = vec![
+            Token::new(TokenType::Print, "print".to_string(), 1),
+            Token::new(TokenType::Identifier, "a".to_string(), 1),
+            Token::new(TokenType::Equal, "=".to_string(), 1),
+            Token::new(TokenType::NUMBER, "4".to_string(), 1),
+            Token::new(TokenType::Semicolon, ";".to_string(), 1),
             Token::new(TokenType::EOF, String::new(), 1),
         ];
         assert_eq!(expected, tokens);
