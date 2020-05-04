@@ -33,7 +33,7 @@ impl Parser {
 
     pub fn parse(&mut self) -> Result<Vec<Stmt>, ParseError> {
         let mut statements = Vec::new();
-        while !self.isAtEnd() {
+        while !self.is_at_end() {
             statements.push(self.declaration()?)
         }
         Ok(statements)
@@ -69,8 +69,21 @@ impl Parser {
     fn statement(&mut self) -> Result<Stmt, ParseError> {
         match self.current_token().token_type {
             TokenType::Print => self.print_statement(),
+            TokenType::LeftBrace => self.block(),
             _ => self.expression_statement(),
         }
+    }
+
+    fn block(&mut self) -> Result<Stmt, ParseError> {
+        self.consume(); // consume the "{"
+        let mut statements = Vec::new();
+        while self.current_token().token_type != TokenType::RightBrace && !self.is_at_end() {
+            let statement = self.declaration()?;
+            statements.push(statement)
+        }
+
+        self.check_and_consume(TokenType::RightBrace, "Expected '}'")?;
+        Ok(Stmt::new_block(statements))
     }
 
     fn print_statement(&mut self) -> Result<Stmt, ParseError> {
@@ -218,7 +231,6 @@ impl Parser {
                 Ok(e)
             },
             TokenType::Identifier => {
-                println!("Here");
                 let e = Expr::new_variable(token.clone());
                 self.consume();
                 Ok(e)
@@ -276,7 +288,7 @@ impl Parser {
         return Err(ParseError::new(message.to_string(), self.current_token().line));
     }
 
-    fn isAtEnd(&mut self) -> bool { 
+    fn is_at_end(&mut self) -> bool { 
         self.current_token().token_type == TokenType::EOF
     }
 }

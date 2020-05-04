@@ -1,4 +1,12 @@
 let a = 10;
 let b = 20;
 
-print a = 4;
+print "a is: " ++ a;
+print "b is: " ++ b;
+
+{
+    let a = 100;
+    print "a is: " ++ a;
+}
+
+print "outer a is: " ++ a;

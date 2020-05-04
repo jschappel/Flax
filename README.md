@@ -1,3 +1,13 @@
+# Flax
+
+### Why am I doing this?
+I have always been fascinated with programing languages and the different advantages of each one. I decided that I would like to build my own language in order to better understand how they are implemented. Flax is a general purpose, C inspired language that draws from both functional and Object Oriented design principles. Some of the languages that Flax draws inspiration from are:
+- Racket
+- Haskell
+- Java
+- C
+- Rust
+
 ### Core Grammar
 ```shell
 
@@ -10,6 +20,9 @@
 
 <statement>     ::= <printStmt>
                  | <exprStmt>
+                 | <block>
+
+<block>         ::= "{" declaration* "}"
 
 <printStmt>     ::= "print" expression ";"
 
@@ -62,3 +75,15 @@
 - Flax follows Ruby's design where all value besides ```false``` and ```nil``` are true
 - Only Integers can compared using ```>```, ```<```, ```>=```, ```<=```
 - Flax uses ```++``` to concatenate strings just like Haskell
+- Flax uses let to create a variable. Shadowing is allowed
+
+
+
+### Road Map
+- [X] Add basic addition and multiplication
+- [X] Add statements to the language 
+- [X] Update the Repl to read .flax files
+- [X] Add global assignment to the language
+- [X] Add lexical scoping to the language
+- [ ] Add immutable variables to the language
+- [ ] Add Structures to the language

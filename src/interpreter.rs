@@ -17,23 +17,24 @@ impl Interpreter {
     }
 
     pub fn interpret(&mut self, statements: Vec<Stmt>) -> Result<(), RuntimeError> {
+        let mut env = Environment::new();
         for statement in statements {
-            statement.evaluate(self, &mut self.environment.clone())?;
+            statement.evaluate(self, &mut env)?;
         }
         Ok(())
     }
 
-    fn add_global_var(&mut self, name: String, value: Value) {
-        self.environment.define(name, Some(value))
-    }
+    // fn add_global_var(&mut self, name: String, value: Value) {
+    //     self.environment.define(name, Some(value))
+    // }
 
-    fn get_global_var(&mut self, token: &Token) -> Result<Value, RuntimeError> {
-        self.environment.get(token)
-    }
+    // fn get_global_var(&mut self, token: &Token) -> Result<Value, RuntimeError> {
+    //     self.environment.get(token)
+    // }
 
-    fn update_global(&mut self, token: &Token, value: Value) -> Result<(), RuntimeError> {
-        self.environment.assign(token, value)
-    }
+    // fn update_global(&mut self, token: &Token, value: Value) -> Result<(), RuntimeError> {
+    //     self.environment.assign(token, value)
+    // }
 }
 
 
@@ -55,9 +56,16 @@ impl Visit for Stmt {
                 match opt {
                     Some(expr) => {
                         let value = expr.evaluate(interpreter, env)?;
-                        interpreter.add_global_var(token.lexeme.clone(), value);
+                        env.define(token.lexeme.clone(), Some(value));
                     },
-                    None => interpreter.add_global_var(token.lexeme.clone(), Value::Nil),
+                    None => env.define(token.lexeme.clone(), None),
+                }
+                return Ok(Value::Nil); // Dummy Value
+            },
+            Stmt::Block(ref stmts) => {
+                let mut new_env = env.new_lexical();
+                for statement in stmts.iter() {
+                    statement.evaluate(interpreter, &mut new_env)?;
                 }
                 return Ok(Value::Nil); // Dummy Value
             },
@@ -73,10 +81,10 @@ impl Visit for Expr {
             Expr::B(ref inside_val) => inside_val.evaluate(interpreter, env),
             Expr::U(ref inside_val) => inside_val.evaluate(interpreter, env),
             Expr::G(ref inside_val) => inside_val.evaluate(interpreter, env),
-            Expr::V(ref token)      => interpreter.get_global_var(token),
+            Expr::V(ref token)      => env.get(token),
             Expr::A(ref token, expr)=> {
                 let value = expr.evaluate(interpreter, env)?;
-                interpreter.update_global(token, value.clone())?;
+                env.assign(token, value.clone())?;
                 Ok(value)
             }
         }

@@ -10,10 +10,19 @@ use std::fmt::{ Display };
 /// A Statement can be one of the following
 /// 1) PrintStmt: evaluates an expression and prints it to the console (TEMPORARY)
 /// 2) ExprStmt: evaluates an expression
+/// 3) VarDecl: Variable declaration
+/// 4) Block: Block statement 
 pub enum Stmt {
     PrintStmt(Expr),
     ExprStmt(Expr),
-    VarDecl(Token, Option<Expr>)
+    VarDecl(Token, Option<Expr>),
+    Block(Box<Vec<Stmt>>),
+}
+
+impl Stmt {
+    pub fn new_block(statements: Vec<Stmt>) -> Stmt {
+        Stmt::Block(Box::new(statements))
+    }
 }
 
 
@@ -172,7 +181,8 @@ impl Display for Stmt {
                     Some(e) => write!(f, "(name = {})", e),
                     None => write!(f, "({})", name.lexeme),
                 }
-            }
+            },
+            Stmt::Block(_) => write!(f, "Placeholder for block"),
         }
     }
 }

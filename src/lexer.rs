@@ -12,7 +12,7 @@ pub enum TokenType {
      GreaterEqual, LessEqual, Bang, BangEqual, Semicolon,
 
     // Grouping
-    LeftParen, RightParen,
+    LeftParen, RightParen, LeftBrace, RightBrace,
 
     // Keywords
     Identifier, Print, Let,
@@ -77,6 +77,8 @@ fn lex(line: String, line_num: u64) -> Result<Vec<Token>, LexError> {
             '"' => add_token(get_string(line_num, &mut it)?, &mut tokens),
             '(' => add_and_consume(Token::new(TokenType::LeftParen, c.to_string(), line_num), &mut tokens, &mut it),
             ')' => add_and_consume(Token::new(TokenType::RightParen, c.to_string(), line_num), &mut tokens, &mut it),
+            '{' => add_and_consume(Token::new(TokenType::LeftBrace, c.to_string(), line_num), &mut tokens, &mut it),
+            '}' => add_and_consume(Token::new(TokenType::RightBrace, c.to_string(), line_num), &mut tokens, &mut it),
             '-' => add_and_consume(Token::new(TokenType::Minus, c.to_string(), line_num), &mut tokens, &mut it),
             '*' => add_and_consume(Token::new(TokenType::Star, c.to_string(), line_num), &mut tokens, &mut it),
             '/' => add_and_consume(Token::new(TokenType::Slash, c.to_string(), line_num), &mut tokens, &mut it),
@@ -241,6 +243,20 @@ mod test {
             Token::new(TokenType::NUMBER, "12".to_string(), 1),
             Token::new(TokenType::NUMBER, "3".to_string(), 1),
             Token::new(TokenType::NUMBER, "67.89".to_string(), 1),
+            Token::new(TokenType::EOF, String::new(), 1),
+        ];
+
+        assert_eq!(expected, tokens);
+    }
+
+    #[test]
+    fn lex_braces() {
+        let tokens = lex_line("() {}".to_string()).unwrap();
+        let expected = vec![
+            Token::new(TokenType::LeftParen, "(".to_string(), 1),
+            Token::new(TokenType::RightParen, ")".to_string(), 1),
+            Token::new(TokenType::LeftBrace, "{".to_string(), 1),
+            Token::new(TokenType::RightBrace, "}".to_string(), 1),
             Token::new(TokenType::EOF, String::new(), 1),
         ];
 
