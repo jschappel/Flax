@@ -9,7 +9,7 @@ use crate::errors::LexError;
 pub enum TokenType {
     // operators 
     Plus, Minus, Star, Slash, EqualEqual, Equal, PlusPlus, Greater, Less,
-     GreaterEqual, LessEqual, Bang, BangEqual, Semicolon,
+     GreaterEqual, LessEqual, Bang, BangEqual, Semicolon, Colon, Question,
 
     // Grouping
     LeftParen, RightParen, LeftBrace, RightBrace,
@@ -83,6 +83,8 @@ fn lex(line: String, line_num: u64) -> Result<Vec<Token>, LexError> {
             '*' => add_and_consume(Token::new(TokenType::Star, c.to_string(), line_num), &mut tokens, &mut it),
             '/' => add_and_consume(Token::new(TokenType::Slash, c.to_string(), line_num), &mut tokens, &mut it),
             ';' => add_and_consume(Token::new(TokenType::Semicolon, c.to_string(), line_num), &mut tokens, &mut it),
+            ':' => add_and_consume(Token::new(TokenType::Colon, c.to_string(), line_num), &mut tokens, &mut it),
+            '?' => add_and_consume(Token::new(TokenType::Question, c.to_string(), line_num), &mut tokens, &mut it),
             '+' => check_ahead_and_add(&mut tokens, line_num, &mut it)?,
             '=' => check_ahead_and_add(&mut tokens, line_num, &mut it)?,
             '!' => check_ahead_and_add(&mut tokens, line_num, &mut it)?,
@@ -250,13 +252,19 @@ mod test {
     }
 
     #[test]
-    fn lex_braces() {
-        let tokens = lex_line("() {}".to_string()).unwrap();
+    fn lex_single_operators() {
+        let tokens = lex_line("() {} ; : ? * / -".to_string()).unwrap();
         let expected = vec![
             Token::new(TokenType::LeftParen, "(".to_string(), 1),
             Token::new(TokenType::RightParen, ")".to_string(), 1),
             Token::new(TokenType::LeftBrace, "{".to_string(), 1),
             Token::new(TokenType::RightBrace, "}".to_string(), 1),
+            Token::new(TokenType::Semicolon, ";".to_string(), 1),
+            Token::new(TokenType::Colon, ":".to_string(), 1),
+            Token::new(TokenType::Question, "?".to_string(), 1),
+            Token::new(TokenType::Star, "*".to_string(), 1),
+            Token::new(TokenType::Slash, "/".to_string(), 1),
+            Token::new(TokenType::Minus, "-".to_string(), 1),
             Token::new(TokenType::EOF, String::new(), 1),
         ];
 

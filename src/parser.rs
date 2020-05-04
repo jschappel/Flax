@@ -114,7 +114,7 @@ impl Parser {
     }
 
     fn assignment(&mut self) -> Result<Expr, ParseError> {
-        let expr = self.equality()?;
+        let expr = self.conditional()?;
 
         if self.current_token().token_type == TokenType::Equal {
             self.consume();
@@ -124,6 +124,22 @@ impl Parser {
                 return Ok(Expr::new_assignment(tok, value));
             }
             return Err(ParseError::new("Invalid assignment target".to_string(), self.current_token().line));
+        }
+        Ok(expr)
+    }
+
+    fn conditional(&mut self) -> Result<Expr, ParseError> {
+        let expr: Expr = self.equality()?;
+
+        if self.current_token().token_type == TokenType::Question {
+            self.consume(); // consume the '?'
+            let then_expr = self.expression()?;
+            if self.current_token().token_type == TokenType::Colon {
+                self.consume(); // consume the ':'
+                let else_expr = self.conditional()?;
+                return Ok(Expr::new_conditional(expr, then_expr, else_expr, self.current_token().line))
+            }
+            return Err(ParseError::new("Expected : after then expression".to_string(), self.current_token().line));
         }
         Ok(expr)
     }

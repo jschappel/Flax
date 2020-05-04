@@ -41,6 +41,7 @@ pub enum Expr {
     U(Box<Unary>),
     B(Box<Binary>),
     G(Box<Grouping>),
+    C(Box<Conditional>),
     V(Token),
     A(Token, Box<Expr>)
 }
@@ -68,6 +69,10 @@ impl Expr {
 
     pub fn new_assignment(token: Token, expr: Expr) -> Expr {
         Expr::A(token, Box::new(expr))
+    }
+
+    pub fn new_conditional(conditional: Expr, then_expr: Expr, else_expr: Expr, line: u64) -> Expr {
+        Expr::C(Box::new(Conditional::new(conditional, then_expr, else_expr, line)))
     }
 }
 
@@ -127,6 +132,20 @@ impl Unary {
     }
 }
 
+#[derive(Debug)]
+pub struct Conditional {
+    pub cond: Expr,
+    pub line_num: u64,
+    pub then_expr: Expr,
+    pub else_expr: Expr,
+}
+
+impl Conditional {
+    pub fn new(cond: Expr, then_expr: Expr, else_expr: Expr, line_num: u64) -> Conditional {
+        Conditional { cond, then_expr, else_expr, line_num }
+    }
+}
+
 
 
 
@@ -143,6 +162,7 @@ impl Display for Expr {
             Expr::G(grp) => write!(f, "{}", grp),
             Expr::V(tok) => write!(f, "{}", tok.lexeme),
             Expr::A(_, expr) => write!(f, "{}", expr),
+            Expr::C(cond) => write!(f, "{}", cond),
         }
     }
 }
@@ -168,6 +188,12 @@ impl Display for Literal {
 impl Display for Unary {
     fn fmt(&self, f: &mut fmt::Formatter<>) -> fmt::Result {
         write!(f, "({} {})", self.operator, self.expr)
+    }
+}
+
+impl Display for Conditional {
+    fn fmt(&self, f: &mut fmt::Formatter<>) -> fmt::Result {
+        write!(f, "({} ? {} : {})", self.cond, self.then_expr, self.else_expr)
     }
 }
 

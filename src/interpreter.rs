@@ -1,4 +1,4 @@
-use crate::ast::{Binary, Unary, Literal, Grouping, Expr, Stmt};
+use crate::ast::{Binary, Unary, Literal, Grouping, Expr, Stmt, Conditional};
 use crate::errors::{RuntimeError};
 use crate::lexer::{TokenType, Token};
 use crate::environment::{ Environment };
@@ -81,6 +81,7 @@ impl Visit for Expr {
             Expr::B(ref inside_val) => inside_val.evaluate(interpreter, env),
             Expr::U(ref inside_val) => inside_val.evaluate(interpreter, env),
             Expr::G(ref inside_val) => inside_val.evaluate(interpreter, env),
+            Expr::C(ref inside_val) => inside_val.evaluate(interpreter, env),
             Expr::V(ref token)      => env.get(token),
             Expr::A(ref token, expr)=> {
                 let value = expr.evaluate(interpreter, env)?;
@@ -149,6 +150,22 @@ impl Visit for Unary {
             },
             TokenType::Bang => Ok(Value::BOOL(!is_truthy(expr))),
             _ => Err(RuntimeError::new(self.operator.lexeme.clone(), "Invalid token for Unary".to_string(), self.operator.line)),
+        }
+    }
+}
+
+impl Visit for Conditional {
+    fn evaluate(&self, interpreter: &mut Interpreter, env: &mut Environment) -> Result<Value, RuntimeError> {
+        let cond: Value = self.cond.evaluate(interpreter, env)?;
+
+        match cond {
+            Value::BOOL(val) => {
+                match val {
+                    true => Ok(self.then_expr.evaluate(interpreter, env)?),
+                    _ => Ok(self.else_expr.evaluate(interpreter, env)?),
+                }
+            },
+            _ => Err(RuntimeError::new("?".to_string(), format!("expected boolean given {}", cond), self.line_num)),
         }
     }
 }

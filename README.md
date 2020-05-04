@@ -19,6 +19,7 @@ I have always been fascinated with programing languages and the different advant
 <varDecl>       ::= "var" IDENTIFIER ( "=" <expression> )? ";"
 
 <statement>     ::= <printStmt>
+                 | <ifStmt>
                  | <exprStmt>
                  | <block>
 
@@ -52,6 +53,8 @@ I have always been fascinated with programing languages and the different advant
 
 <assignment>        ::= IDENTIFIER "=" assignment
                      | <equality>
+
+<conditional>       ::= <equality> ( "?" <expression> ":" <conditional> )?
 
 <equality>          ::= <comparison> ( ( '==' | '!=' ) <comparison> )*
 
