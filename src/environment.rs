@@ -15,7 +15,6 @@ pub struct Environment {
     values: HashMap<String, Value>
 }
 
-
 impl Environment {
     pub fn new() -> Environment {
         Environment { values: HashMap::new(), enclosing: EnvType::Global }
@@ -49,11 +48,19 @@ impl Environment {
         let name = token.lexeme.clone();
         if self.values.contains_key(&name) {
             self.values.insert(name, value);
-            return Ok(());
+            return Ok(())
         }
-        if let EnvType::Scoped(ref mut x) = self.enclosing.clone() {
+        if let EnvType::Scoped(ref mut x) = self.enclosing {
             return x.assign(token, value);
         }
         Err(RuntimeError::new(token.lexeme.clone(), "Undefined Variable".to_string(), token.line))
+    }
+
+    // TODO:: Better memory management
+    pub fn return_outer_scope(&mut self) -> Environment {
+        match self.enclosing {
+            EnvType::Global => self.clone(),
+            EnvType::Scoped(ref env) => *env.clone(),
+        }
     }
 }

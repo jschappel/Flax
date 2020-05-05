@@ -18,6 +18,7 @@ pub enum Stmt {
     IfStmt(Box<IfStatement>),
     VarDecl(Token, Option<Expr>),
     Block(Box<Vec<Stmt>>),
+    WhileStmt(Expr, Box<Stmt>),
 }
 
 impl Stmt {
@@ -27,6 +28,10 @@ impl Stmt {
 
     pub fn new_if(conditional: Expr, then_block: Stmt, else_block: Option<Stmt>) -> Stmt {
         Stmt::IfStmt(Box::new(IfStatement { conditional, then_block, else_block }))  
+    }
+    
+    pub fn new_while(condition: Expr, block: Stmt) -> Stmt {
+        Stmt::WhileStmt(condition, Box::new(block))
     }
 }
 
@@ -239,6 +244,7 @@ impl Display for Stmt {
             },
             Stmt::Block(_) => write!(f, "Placeholder for block"),
             Stmt::IfStmt(_) => write!(f, "Placeholder for block"),
+            Stmt::WhileStmt(_,_) => write!(f, "Placeholder for while"),
         }
     }
 }

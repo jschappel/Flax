@@ -71,10 +71,18 @@ impl Parser {
             TokenType::Print => self.print_statement(),
             TokenType::If => self.if_statement(),
             TokenType::LeftBrace => {self.consume(); self.block()},
+            TokenType::While => self.while_stmt(),
             _ => self.expression_statement(),
         }
     }
 
+    fn while_stmt(&mut self) -> Result<Stmt, ParseError> {
+        self.consume(); // consume the while token
+        let condition = self.expression()?;
+        self.check_and_consume(TokenType::LeftBrace, "Expected '{' after while condition")?;
+        let block = self.block()?;
+        Ok(Stmt::new_while(condition, block))
+    }
 
     fn if_statement(&mut self) -> Result<Stmt, ParseError> {
         self.consume(); // consume the if Stmt
@@ -131,6 +139,7 @@ impl Parser {
         self.assignment()
     }
 
+    // a = 10;
     fn assignment(&mut self) -> Result<Expr, ParseError> {
         let expr = self.logical_or()?;
 

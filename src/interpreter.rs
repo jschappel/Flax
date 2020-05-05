@@ -67,6 +67,16 @@ impl Visit for Stmt {
                 for statement in stmts.iter() {
                     statement.evaluate(interpreter, &mut new_env)?;
                 }
+                // TODO:: Better memory management
+                *env = new_env.return_outer_scope();
+                return Ok(Value::Nil); // Dummy Value
+            },
+            Stmt::WhileStmt(ref cond, ref body) => {
+                while is_truthy(&cond.evaluate(interpreter, env)?) {
+                    //println!("Before: {:?}", env);
+                    body.evaluate(interpreter, env)?;
+                    //println!("After: {:?}", env);
+                }
                 return Ok(Value::Nil); // Dummy Value
             },
             Stmt::IfStmt(ref stmt) => stmt.evaluate(interpreter, env),
@@ -104,7 +114,7 @@ impl Visit for Expr {
             Expr::Log(ref inside_val)   => inside_val.evaluate(interpreter, env),
             Expr::V(ref token)          => env.get(token),
             Expr::A(ref token, expr)    => {
-                let value = expr.evaluate(interpreter, env)?;
+                let value: Value = expr.evaluate(interpreter, env)?;
                 env.assign(token, value.clone())?;
                 Ok(value)
             }

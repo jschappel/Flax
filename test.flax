@@ -1,10 +1,12 @@
+let x = 3;
 
-
-if true or false {
-    print "Impossible";
+while i < 10 {
+    print "The value for i is: " ++ i;
+    i = i + 1;
 }
 
-if true or true {
-    print "OK!";
-}
+3 > 5 ? true : false
 
+if x >= 3 and x <= 5 {
+    print "Here";
+}
