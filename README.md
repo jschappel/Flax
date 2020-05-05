@@ -98,7 +98,7 @@ I have always been fascinated with programing languages and the different advant
 - [X] Add global assignment to the language
 - [X] Add lexical scoping to the language
 - [X] Add conditionals to the language
-- [ ] Add loops to the language
+- [X] Add loops to the language
 - [ ] Make the language turing complete
 - [ ] Add immutable variables to the language
 - [ ] Add Structures to the language
