@@ -132,7 +132,7 @@ impl Parser {
     }
 
     fn assignment(&mut self) -> Result<Expr, ParseError> {
-        let expr = self.conditional()?;
+        let expr = self.logical_or()?;
 
         if self.current_token().token_type == TokenType::Equal {
             self.consume();
@@ -144,6 +144,28 @@ impl Parser {
             return Err(ParseError::new("Invalid assignment target".to_string(), self.current_token().line));
         }
         Ok(expr)
+    }
+
+    fn logical_or(&mut self) -> Result<Expr, ParseError> {
+        let left: Expr = self.logical_and()?;
+        if self.current_token().token_type == TokenType::Or {
+            let tok = self.current_token().clone();
+            self.consume(); // consume the or
+            let right = self.logical_and()?;
+            return Ok(Expr::new_logical(tok, left, right))
+        }
+        Ok(left)
+    }
+
+    fn logical_and(&mut self) -> Result<Expr, ParseError> {
+        let left: Expr = self.conditional()?;
+        if self.current_token().token_type == TokenType::And {
+            let tok = self.current_token().clone();
+            self.consume(); // consume the and
+            let right = self.conditional()?;
+            return Ok(Expr::new_logical(tok, left, right))
+        }
+        Ok(left)
     }
 
     fn conditional(&mut self) -> Result<Expr, ParseError> {

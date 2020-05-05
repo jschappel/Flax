@@ -1,4 +1,4 @@
-use crate::ast::{Binary, Unary, Literal, Grouping, Expr, Stmt, Conditional, IfStatement};
+use crate::ast::{Binary, Unary, Literal, Grouping, Expr, Stmt, Conditional, IfStatement, Logical};
 use crate::errors::{RuntimeError};
 use crate::lexer::{TokenType, Token};
 use crate::environment::{ Environment };
@@ -96,13 +96,14 @@ impl Visit for IfStatement {
 impl Visit for Expr {
     fn evaluate(&self, interpreter: &mut Interpreter, env: &mut Environment) -> Result<Value, RuntimeError> {
         match self {
-            Expr::L(ref inside_val) => inside_val.evaluate(interpreter, env),
-            Expr::B(ref inside_val) => inside_val.evaluate(interpreter, env),
-            Expr::U(ref inside_val) => inside_val.evaluate(interpreter, env),
-            Expr::G(ref inside_val) => inside_val.evaluate(interpreter, env),
-            Expr::C(ref inside_val) => inside_val.evaluate(interpreter, env),
-            Expr::V(ref token)      => env.get(token),
-            Expr::A(ref token, expr)=> {
+            Expr::L(ref inside_val)     => inside_val.evaluate(interpreter, env),
+            Expr::B(ref inside_val)     => inside_val.evaluate(interpreter, env),
+            Expr::U(ref inside_val)     => inside_val.evaluate(interpreter, env),
+            Expr::G(ref inside_val)     => inside_val.evaluate(interpreter, env),
+            Expr::C(ref inside_val)     => inside_val.evaluate(interpreter, env),
+            Expr::Log(ref inside_val)   => inside_val.evaluate(interpreter, env),
+            Expr::V(ref token)          => env.get(token),
+            Expr::A(ref token, expr)    => {
                 let value = expr.evaluate(interpreter, env)?;
                 env.assign(token, value.clone())?;
                 Ok(value)
@@ -167,7 +168,7 @@ impl Visit for Unary {
                 }
                 Err(RuntimeError::new(self.operator.lexeme.clone(), "Invalid unary expression.  Expected Number".to_string(), self.operator.line))
             },
-            TokenType::Bang => Ok(Value::BOOL(!is_truthy(expr))),
+            TokenType::Bang => Ok(Value::BOOL(!is_truthy(&expr))),
             _ => Err(RuntimeError::new(self.operator.lexeme.clone(), "Invalid token for Unary".to_string(), self.operator.line)),
         }
     }
@@ -188,6 +189,35 @@ impl Visit for Conditional {
         }
     }
 }
+
+impl Visit for Logical {
+    fn evaluate(&self, interpreter: &mut Interpreter, env: &mut Environment) -> Result<Value, RuntimeError> {
+        let left: Value = self.left.evaluate(interpreter, env)?;
+        match self.tok.token_type {
+            TokenType::Or => {
+                if is_truthy(&left) {
+                   return Ok(left)
+                }
+                else if !is_truthy(&left) {
+                    return Ok(left)
+                } else {
+                    return Ok(self.right.evaluate(interpreter, env)?);
+                }
+            },
+            TokenType::And => {
+                if is_truthy(&left) {
+                    return Ok(self.right.evaluate(interpreter, env)?);
+                } else {
+                    return Ok(left);
+                }
+            },
+            _ => Err(RuntimeError::new(self.tok.lexeme.clone(), "TODO: Better error handling".to_string(), self.tok.line)),
+
+        }
+    }
+}
+
+
 
 impl Visit for Grouping {
     fn evaluate(&self, interpreter: &mut Interpreter, env: &mut Environment) -> Result<Value, RuntimeError> {
@@ -286,7 +316,7 @@ fn determine_int_comparison(pair: (Value, Value), token: &Token) -> Result<Value
 
 // Determines if  a value is truthy or falsy
 // Important: Flax follows Ruby's rule: everything but False and nil are true
-fn is_truthy(value: Value) -> bool {
+fn is_truthy(value: &Value) -> bool {
     match value {
         Value::BOOL(false) | Value::Nil => false,
         _ => true,

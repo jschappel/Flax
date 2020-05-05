@@ -1,12 +1,10 @@
 
-let x = 18;
-{
-    let x = 10;
-}
-x = 8;
 
-if x > 5 {
-    print true;
-} else {
-    print false;
+if true or false {
+    print "Impossible";
 }
+
+if true or true {
+    print "OK!";
+}
+

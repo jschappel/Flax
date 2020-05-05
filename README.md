@@ -20,10 +20,13 @@ I have always been fascinated with programing languages and the different advant
 
 <statement>     ::= <printStmt>
                  | <ifStmt>
+                 | <whileStmt>
                  | <exprStmt>
                  | <block>
 
 <ifStmt>        ::= "if" <expression> <block> ( "else" <block> )?
+
+<whileStmt>     ::= "while" <expression> <block>
 
 <block>         ::= "{" declaration* "}"
 
@@ -54,7 +57,11 @@ I have always been fascinated with programing languages and the different advant
 <expression>        ::= <assignment>
 
 <assignment>        ::= IDENTIFIER "=" assignment
-                     | <equality>
+                     | <logical_or>
+
+<logical_or>        ::= logical_and ( "or" logical_and )*
+
+<logical_and>       ::= equality ( "and" equality )*
 
 <conditional>       ::= <equality> ( "?" <expression> ":" <conditional> )?
 
@@ -80,8 +87,8 @@ I have always been fascinated with programing languages and the different advant
 - Flax follows Ruby's design where all value besides ```false``` and ```nil``` are true
 - Only Integers can compared using ```>```, ```<```, ```>=```, ```<=```
 - Flax uses ```++``` to concatenate strings just like Haskell
-- Flax uses let to create a variable. Shadowing is allowed
-
+- Flax uses ```let``` to create a variable. Shadowing is allowed
+- Flax uses ```and``` and ```or``` for logical operators
 
 
 ### Road Map
@@ -90,5 +97,8 @@ I have always been fascinated with programing languages and the different advant
 - [X] Update the Repl to read .flax files
 - [X] Add global assignment to the language
 - [X] Add lexical scoping to the language
+- [X] Add conditionals to the language
+- [ ] Add loops to the language
+- [ ] Make the language turing complete
 - [ ] Add immutable variables to the language
 - [ ] Add Structures to the language

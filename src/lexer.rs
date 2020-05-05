@@ -15,7 +15,7 @@ pub enum TokenType {
     LeftParen, RightParen, LeftBrace, RightBrace,
 
     // Reserved Identifiers
-    Identifier, Print, Let, If, Else,
+    Identifier, Print, Let, If, Else, And, Or,
 
     // Prims
     NUMBER, STRING, TRUE, FALSE, Nil,
@@ -173,13 +173,15 @@ fn add_identifier<I: Iterator<Item=char>>(tokens: &mut Vec<Token>, line_num: u64
 
 fn determine_identifier(s: &String) -> TokenType {
     match &s[..] {
-        "true" => TokenType::TRUE,
+        "true"  => TokenType::TRUE,
         "false" => TokenType::FALSE,
-        "nil" => TokenType::Nil,
+        "nil"   => TokenType::Nil,
         "print" => TokenType::Print,
-        "let" => TokenType::Let,
-        "if" => TokenType::If,
-        "else" => TokenType::Else,
+        "let"   => TokenType::Let,
+        "if"    => TokenType::If,
+        "else"  => TokenType::Else,
+        "and"   => TokenType::And,
+        "or"    => TokenType::Or,
         _ => TokenType::Identifier,
     }
 }
@@ -368,12 +370,14 @@ mod test {
 
     #[test]
     fn reserved_identifiers() {
-        let tokens = lex_line("print let if".to_string()).unwrap();
+        let tokens = lex_line("print let if else and or".to_string()).unwrap();
         let expected = vec![
             Token::new(TokenType::Print, "print".to_string(), 1),
             Token::new(TokenType::Let, "let".to_string(), 1),
             Token::new(TokenType::If, "if".to_string(), 1),
             Token::new(TokenType::Else, "else".to_string(), 1),
+            Token::new(TokenType::And, "and".to_string(), 1),
+            Token::new(TokenType::Or, "or".to_string(), 1),
             Token::new(TokenType::EOF, String::new(), 1),
         ];
         assert_eq!(expected, tokens);
