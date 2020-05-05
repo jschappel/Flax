@@ -23,6 +23,9 @@ I have always been fascinated with programing languages and the different advant
                  | <whileStmt>
                  | <exprStmt>
                  | <block>
+                 | <break>
+
+<break>         ::= "break" ";"
 
 <ifStmt>        ::= "if" <expression> <block> ( "else" <block> )?
 
@@ -99,6 +102,6 @@ I have always been fascinated with programing languages and the different advant
 - [X] Add lexical scoping to the language
 - [X] Add conditionals to the language
 - [X] Add loops to the language
-- [ ] Make the language turing complete
+- [X] Make the language turing complete
 - [ ] Add immutable variables to the language
 - [ ] Add Structures to the language

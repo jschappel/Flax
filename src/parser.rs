@@ -24,11 +24,12 @@ use lexer::{ Token, TokenType };
 pub struct Parser {
     tokens: Vec<Token>,
     index: usize,
+    loops: u32,
 }
 
 impl Parser {
     pub fn new(tokens: Vec<Token>) -> Parser {
-        Parser { tokens, index: 0 }
+        Parser { tokens, index: 0, loops: 0}
     }
 
     pub fn parse(&mut self) -> Result<Vec<Stmt>, ParseError> {
@@ -72,15 +73,27 @@ impl Parser {
             TokenType::If => self.if_statement(),
             TokenType::LeftBrace => {self.consume(); self.block()},
             TokenType::While => self.while_stmt(),
+            TokenType::Break => self.break_statement(),
             _ => self.expression_statement(),
         }
+    }
+
+    fn break_statement(&mut self) -> Result<Stmt, ParseError> {
+        if self.loops > 0 {
+            self.consume();
+            self.check_and_consume(TokenType::Semicolon, "Expected ';' after statement")?;
+            return Ok(Stmt::Break)
+        }
+        Err(ParseError::new("'break' can only be used inside a while loop".to_string(), self.current_token().line))
     }
 
     fn while_stmt(&mut self) -> Result<Stmt, ParseError> {
         self.consume(); // consume the while token
         let condition = self.expression()?;
         self.check_and_consume(TokenType::LeftBrace, "Expected '{' after while condition")?;
+        self.loops +=1; // Increment the loop counter
         let block = self.block()?;
+        self.loops -=1; // Decrease the loop counter after all statements have been parsed
         Ok(Stmt::new_while(condition, block))
     }
 

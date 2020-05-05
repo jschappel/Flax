@@ -19,6 +19,7 @@ pub enum Stmt {
     VarDecl(Token, Option<Expr>),
     Block(Box<Vec<Stmt>>),
     WhileStmt(Expr, Box<Stmt>),
+    Break,
 }
 
 impl Stmt {
@@ -245,6 +246,7 @@ impl Display for Stmt {
             Stmt::Block(_) => write!(f, "Placeholder for block"),
             Stmt::IfStmt(_) => write!(f, "Placeholder for block"),
             Stmt::WhileStmt(_,_) => write!(f, "Placeholder for while"),
+            Stmt::Break => write!(f, "Placeholder for while"),
         }
     }
 }

@@ -65,7 +65,9 @@ impl Visit for Stmt {
             Stmt::Block(ref stmts) => {
                 let mut new_env = env.new_lexical();
                 for statement in stmts.iter() {
-                    statement.evaluate(interpreter, &mut new_env)?;
+                    if statement.evaluate(interpreter, &mut new_env)? == Value::Break {
+                       return Ok(Value::Break);
+                    }
                 }
                 // TODO:: Better memory management
                 *env = new_env.return_outer_scope();
@@ -73,12 +75,13 @@ impl Visit for Stmt {
             },
             Stmt::WhileStmt(ref cond, ref body) => {
                 while is_truthy(&cond.evaluate(interpreter, env)?) {
-                    //println!("Before: {:?}", env);
-                    body.evaluate(interpreter, env)?;
-                    //println!("After: {:?}", env);
+                   if body.evaluate(interpreter, env)? == Value::Break {
+                       break;
+                   }
                 }
                 return Ok(Value::Nil); // Dummy Value
             },
+            Stmt::Break => Ok(Value::Break),
             Stmt::IfStmt(ref stmt) => stmt.evaluate(interpreter, env),
         }
     }
@@ -242,6 +245,7 @@ pub enum Value {
     STRING(String),
     NUMBER(f64),
     Nil,
+    Break,
 }
 
 
@@ -343,6 +347,7 @@ impl fmt::Display for Value {
             Value::Nil => write!(f, "nil"),
             Value::STRING(val) => write!(f, "\"{}\"", val),
             Value::NUMBER(val) => write!(f, "{}", val),
+            Value::Break => write!(f, "break"),
         }
     }
 }

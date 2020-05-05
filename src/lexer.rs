@@ -15,7 +15,7 @@ pub enum TokenType {
     LeftParen, RightParen, LeftBrace, RightBrace,
 
     // Reserved Identifiers
-    Identifier, Print, Let, If, Else, And, Or, While,
+    Identifier, Print, Let, If, Else, And, Or, While, Break,
 
     // Prims
     NUMBER, STRING, TRUE, FALSE, Nil,
@@ -183,6 +183,7 @@ fn determine_identifier(s: &String) -> TokenType {
         "and"   => TokenType::And,
         "or"    => TokenType::Or,
         "while" => TokenType::While,
+        "break" => TokenType::Break,
         _ => TokenType::Identifier,
     }
 }
@@ -371,7 +372,7 @@ mod test {
 
     #[test]
     fn reserved_identifiers() {
-        let tokens = lex_line("print let if else and or while".to_string()).unwrap();
+        let tokens = lex_line("print let if else and or while break".to_string()).unwrap();
         let expected = vec![
             Token::new(TokenType::Print, "print".to_string(), 1),
             Token::new(TokenType::Let, "let".to_string(), 1),
@@ -380,6 +381,7 @@ mod test {
             Token::new(TokenType::And, "and".to_string(), 1),
             Token::new(TokenType::Or, "or".to_string(), 1),
             Token::new(TokenType::While, "while".to_string(), 1),
+            Token::new(TokenType::Break, "break".to_string(), 1),
             Token::new(TokenType::EOF, String::new(), 1),
         ];
         assert_eq!(expected, tokens);
