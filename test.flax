@@ -1,3 +1,12 @@
-let x = 5 > 7 ? true : false ;
 
-print x;
+let x = 18;
+{
+    let x = 10;
+}
+x = 8;
+
+if x > 5 {
+    print true;
+} else {
+    print false;
+}

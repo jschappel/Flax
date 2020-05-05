@@ -1,4 +1,4 @@
-use crate::ast::{Binary, Unary, Literal, Grouping, Expr, Stmt, Conditional};
+use crate::ast::{Binary, Unary, Literal, Grouping, Expr, Stmt, Conditional, IfStatement};
 use crate::errors::{RuntimeError};
 use crate::lexer::{TokenType, Token};
 use crate::environment::{ Environment };
@@ -69,6 +69,25 @@ impl Visit for Stmt {
                 }
                 return Ok(Value::Nil); // Dummy Value
             },
+            Stmt::IfStmt(ref stmt) => stmt.evaluate(interpreter, env),
+        }
+    }
+}
+
+impl Visit for IfStatement {
+    fn evaluate(&self, interpreter: &mut Interpreter, env: &mut Environment) -> Result<Value, RuntimeError> {
+        let cond = self.conditional.evaluate(interpreter, env)?;
+        match cond {
+            Value::BOOL(v) => {
+                if v == false {
+                    return match &self.else_block {
+                        Some(block) => Ok(block.evaluate(interpreter, env)?),
+                        None => Ok(Value::Nil) // Dummy value
+                    }
+                }
+                return Ok(self.then_block.evaluate(interpreter, env)?);
+            },
+            _ => self.then_block.evaluate(interpreter, env),
         }
     }
 }

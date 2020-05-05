@@ -69,13 +69,31 @@ impl Parser {
     fn statement(&mut self) -> Result<Stmt, ParseError> {
         match self.current_token().token_type {
             TokenType::Print => self.print_statement(),
-            TokenType::LeftBrace => self.block(),
+            TokenType::If => self.if_statement(),
+            TokenType::LeftBrace => {self.consume(); self.block()},
             _ => self.expression_statement(),
         }
     }
 
+
+    fn if_statement(&mut self) -> Result<Stmt, ParseError> {
+        self.consume(); // consume the if Stmt
+        let expr: Expr = self.expression()?;
+        self.check_and_consume(TokenType::LeftBrace, "Expected block expression after a if expression")?;
+        let then_block = self.block()?;
+
+        if self.current_token().token_type == TokenType::Else {
+            self.consume(); // consume the else
+            self.check_and_consume(TokenType::LeftBrace, "Expected block expression after a else expression")?;
+            let else_block = self.block()?;
+            return Ok(Stmt::new_if(expr, then_block, Some(else_block)));
+        }
+
+        Ok(Stmt::new_if(expr, then_block, None))
+    }
+
+
     fn block(&mut self) -> Result<Stmt, ParseError> {
-        self.consume(); // consume the "{"
         let mut statements = Vec::new();
         while self.current_token().token_type != TokenType::RightBrace && !self.is_at_end() {
             let statement = self.declaration()?;

@@ -15,6 +15,7 @@ use std::fmt::{ Display };
 pub enum Stmt {
     PrintStmt(Expr),
     ExprStmt(Expr),
+    IfStmt(Box<IfStatement>),
     VarDecl(Token, Option<Expr>),
     Block(Box<Vec<Stmt>>),
 }
@@ -23,9 +24,17 @@ impl Stmt {
     pub fn new_block(statements: Vec<Stmt>) -> Stmt {
         Stmt::Block(Box::new(statements))
     }
+
+    pub fn new_if(conditional: Expr, then_block: Stmt, else_block: Option<Stmt>) -> Stmt {
+        Stmt::IfStmt(Box::new(IfStatement { conditional, then_block, else_block }))  
+    }
 }
 
-
+pub struct IfStatement {
+    pub conditional: Expr,
+    pub then_block: Stmt,
+    pub else_block: Option<Stmt>,
+}
 
 
 
@@ -209,6 +218,7 @@ impl Display for Stmt {
                 }
             },
             Stmt::Block(_) => write!(f, "Placeholder for block"),
+            Stmt::IfStmt(_) => write!(f, "Placeholder for block"),
         }
     }
 }

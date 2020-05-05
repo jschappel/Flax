@@ -23,6 +23,8 @@ I have always been fascinated with programing languages and the different advant
                  | <exprStmt>
                  | <block>
 
+<ifStmt>        ::= "if" <expression> <block> ( "else" <block> )?
+
 <block>         ::= "{" declaration* "}"
 
 <printStmt>     ::= "print" expression ";"

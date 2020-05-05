@@ -14,8 +14,8 @@ pub enum TokenType {
     // Grouping
     LeftParen, RightParen, LeftBrace, RightBrace,
 
-    // Keywords
-    Identifier, Print, Let,
+    // Reserved Identifiers
+    Identifier, Print, Let, If, Else,
 
     // Prims
     NUMBER, STRING, TRUE, FALSE, Nil,
@@ -48,6 +48,7 @@ pub fn lex_file(filename: &str) -> Result<Vec<Token>, LexError> {
     let buf_reader = BufReader::new(file);
     let mut tokens = Vec::new();
     let mut max = 0;
+
     for (i, val) in buf_reader.lines().enumerate() {
         match val {
             Ok(line) => tokens.append(&mut lex(line, i as u64)?),
@@ -177,6 +178,8 @@ fn determine_identifier(s: &String) -> TokenType {
         "nil" => TokenType::Nil,
         "print" => TokenType::Print,
         "let" => TokenType::Let,
+        "if" => TokenType::If,
+        "else" => TokenType::Else,
         _ => TokenType::Identifier,
     }
 }
@@ -365,10 +368,12 @@ mod test {
 
     #[test]
     fn reserved_identifiers() {
-        let tokens = lex_line("print let".to_string()).unwrap();
+        let tokens = lex_line("print let if".to_string()).unwrap();
         let expected = vec![
             Token::new(TokenType::Print, "print".to_string(), 1),
             Token::new(TokenType::Let, "let".to_string(), 1),
+            Token::new(TokenType::If, "if".to_string(), 1),
+            Token::new(TokenType::Else, "else".to_string(), 1),
             Token::new(TokenType::EOF, String::new(), 1),
         ];
         assert_eq!(expected, tokens);

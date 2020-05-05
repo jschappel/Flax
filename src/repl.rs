@@ -115,9 +115,3 @@ fn debug_parse_statement(stmt: &str) {
 enum ReplMode {
     Normal, Debug
 }
-
-// **IMPORTANT **
-
-// Reading command line args!
-//let args: Vec<String> = env::args().collect();
-//println!("{:?}", args);
