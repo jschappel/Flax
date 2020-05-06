@@ -10,13 +10,13 @@ pub enum TokenType {
     // operators 
     Plus, Minus, Star, Slash, EqualEqual, Equal, PlusPlus, Greater, Less,
      GreaterEqual, LessEqual, Bang, BangEqual, Semicolon, Colon, Question,
-     PlusEqual, MinusEqual,
+     PlusEqual, MinusEqual, Comma,
 
     // Grouping
     LeftParen, RightParen, LeftBrace, RightBrace,
 
     // Reserved Identifiers
-    Identifier, Print, Let, If, Else, And, Or, While, Break,
+    Identifier, Print, Let, If, Else, And, Or, While, Break, Func,
 
     // Prims
     NUMBER, STRING, TRUE, FALSE, Nil,
@@ -86,6 +86,7 @@ fn lex(line: String, line_num: u64) -> Result<Vec<Token>, LexError> {
             ';' => add_and_consume(Token::new(TokenType::Semicolon, c.to_string(), line_num), &mut tokens, &mut it),
             ':' => add_and_consume(Token::new(TokenType::Colon, c.to_string(), line_num), &mut tokens, &mut it),
             '?' => add_and_consume(Token::new(TokenType::Question, c.to_string(), line_num), &mut tokens, &mut it),
+            ',' => add_and_consume(Token::new(TokenType::Comma, c.to_string(), line_num), &mut tokens, &mut it),
             '-' => check_ahead_and_add(&mut tokens, line_num, &mut it)?,
             '+' => check_ahead_and_add(&mut tokens, line_num, &mut it)?,
             '=' => check_ahead_and_add(&mut tokens, line_num, &mut it)?,
@@ -188,6 +189,7 @@ fn determine_identifier(s: &String) -> TokenType {
         "or"    => TokenType::Or,
         "while" => TokenType::While,
         "break" => TokenType::Break,
+        "func"  => TokenType::Func,
         _ => TokenType::Identifier,
     }
 }
@@ -264,7 +266,7 @@ mod test {
 
     #[test]
     fn lex_single_operators() {
-        let tokens = lex_line("() {} ; : ? * / -".to_string()).unwrap();
+        let tokens = lex_line("() {} ; : ? * / - ,".to_string()).unwrap();
         let expected = vec![
             Token::new(TokenType::LeftParen, "(".to_string(), 1),
             Token::new(TokenType::RightParen, ")".to_string(), 1),
@@ -276,6 +278,7 @@ mod test {
             Token::new(TokenType::Star, "*".to_string(), 1),
             Token::new(TokenType::Slash, "/".to_string(), 1),
             Token::new(TokenType::Minus, "-".to_string(), 1),
+            Token::new(TokenType::Comma, ",".to_string(), 1),
             Token::new(TokenType::EOF, String::new(), 1),
         ];
 
@@ -379,7 +382,7 @@ mod test {
 
     #[test]
     fn reserved_identifiers() {
-        let tokens = lex_line("print let if else and or while break".to_string()).unwrap();
+        let tokens = lex_line("print let if else and or while break func".to_string()).unwrap();
         let expected = vec![
             Token::new(TokenType::Print, "print".to_string(), 1),
             Token::new(TokenType::Let, "let".to_string(), 1),
@@ -389,6 +392,7 @@ mod test {
             Token::new(TokenType::Or, "or".to_string(), 1),
             Token::new(TokenType::While, "while".to_string(), 1),
             Token::new(TokenType::Break, "break".to_string(), 1),
+            Token::new(TokenType::Func, "func" .to_string(), 1),
             Token::new(TokenType::EOF, String::new(), 1),
         ];
         assert_eq!(expected, tokens);

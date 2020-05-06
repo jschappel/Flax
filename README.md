@@ -13,8 +13,15 @@ I have always been fascinated with programing languages and the different advant
 
 <program>       ::= <declaration>* EOF
 
-<declaration>   ::= <varDecl>
+<declaration>   ::= <funDecl>
+                 | <varDecl>
                  | <statement>
+
+<funDecl>       ::= "fn" <function>
+
+<function>      ::= IDENTIFIER "(" parameters? ")" <block>
+
+<parameters>    ::= IDENTIFIER ( "," IDENTIFIER )*
 
 <varDecl>       ::= "var" IDENTIFIER ( "=" <expression> )? ";"
 
@@ -81,7 +88,11 @@ I have always been fascinated with programing languages and the different advant
 <multiplication>    ::= <unary> ( ( '*' | '/' ) <unary> )*
 
 <unary>             ::= ( '-' | '!' ) <unary>
-                     | <primary>
+                     | <call>
+
+<call>              ::= <literal> ( "(" arguments? ")" )*
+
+<arguments>         ::= <expression> ( "," expression )*
 
 <literal>           ::= NUMBER | STRING | true | false | nil
                      | "(" <expression> ")" 
@@ -106,7 +117,8 @@ I have always been fascinated with programing languages and the different advant
 - [X] Add lexical scoping to the language
 - [X] Add conditionals to the language
 - [X] Add loops to the language
-- [ ] Add += for assignment
+- [X] Add increments (+= -=)
+- [ ] Add functions to the language
 - [ ] Make the language turing complete
 - [ ] Add immutable variables to the language
 - [ ] Add Structures to the language

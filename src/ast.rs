@@ -19,6 +19,7 @@ pub enum Stmt {
     VarDecl(Token, Option<Expr>),
     Block(Box<Vec<Stmt>>),
     WhileStmt(Expr, Box<Stmt>),
+    FuncStmt(Box<Function>),
     Break,
 }
 
@@ -34,12 +35,22 @@ impl Stmt {
     pub fn new_while(condition: Expr, block: Stmt) -> Stmt {
         Stmt::WhileStmt(condition, Box::new(block))
     }
+
+    pub fn new_function(name: Token, params: Vec<Token>, body: Stmt) -> Stmt {
+        Stmt::FuncStmt(Box::new(Function { name, params, body }))
+    }
 }
 
 pub struct IfStatement {
     pub conditional: Expr,
     pub then_block: Stmt,
     pub else_block: Option<Stmt>,
+}
+
+pub struct Function {
+    pub name: Token,
+    pub params: Vec<Token>,
+    pub body: Stmt,
 }
 
 
@@ -59,7 +70,8 @@ pub enum Expr {
     C(Box<Conditional>),
     V(Token),
     A(Token, Box<Expr>),
-    Log(Box<Logical>)
+    Log(Box<Logical>),
+    Cal(Box<Call>),
 }
 
 impl Expr {
@@ -93,6 +105,10 @@ impl Expr {
 
     pub fn new_logical(tok: Token, left: Expr, right: Expr) -> Expr {
         Expr::Log(Box::new(Logical { tok, left, right }))
+    }
+
+    pub fn new_call(callee: Expr, tok: Token, args: Vec<Expr>) -> Expr {
+        Expr::Cal(Box::new(Call { callee, tok, args }))
     }
 }
 
@@ -152,6 +168,8 @@ impl Unary {
     }
 }
 
+
+
 #[derive(Debug)]
 pub struct Conditional {
     pub cond: Expr,
@@ -175,6 +193,13 @@ pub struct Logical {
 }
 
 
+#[derive(Debug)]
+pub struct Call {
+    pub callee: Expr,
+    pub args: Vec<Expr>,
+    pub tok: Token,
+}
+
 
 
 
@@ -192,6 +217,7 @@ impl Display for Expr {
             Expr::A(_, expr) => write!(f, "{}", expr),
             Expr::C(cond) => write!(f, "{}", cond),
             Expr::Log(logical) => write!(f, "{}", logical),
+            Expr::Cal(_) => write!(f, "{}", self)
         }
     }
 }
@@ -232,6 +258,12 @@ impl Display for Logical {
     }
 }
 
+impl Display for Call {
+    fn fmt(&self, f: &mut fmt::Formatter<>) -> fmt::Result {
+        write!(f, "({} ({:?}))", self.callee, self.args)
+    }
+}
+
 impl Display for Stmt {
     fn fmt(&self, f: &mut fmt::Formatter<>) -> fmt::Result {
         match self {
@@ -247,6 +279,7 @@ impl Display for Stmt {
             Stmt::IfStmt(_) => write!(f, "Placeholder for block"),
             Stmt::WhileStmt(_,_) => write!(f, "Placeholder for while"),
             Stmt::Break => write!(f, "Placeholder for while"),
+            Stmt::FuncStmt(_) => write!(f, "Placeholder for func stmt"),
         }
     }
 }

@@ -69,6 +69,7 @@ impl Parser {
 
     fn statement(&mut self) -> Result<Stmt, ParseError> {
         match self.current_token().token_type {
+            TokenType::Func => {self.consume(); self.function("function")},
             TokenType::Print => self.print_statement(),
             TokenType::If => self.if_statement(),
             TokenType::LeftBrace => {self.consume(); self.block()},
@@ -76,6 +77,31 @@ impl Parser {
             TokenType::Break => self.break_statement(),
             _ => self.expression_statement(),
         }
+    }
+
+    fn function(&mut self, kind: &str) -> Result<Stmt, ParseError> {
+        let name = self.check_and_consume(TokenType::Identifier, &format!("Expect {} name.", kind))?;
+        self.check_and_consume(TokenType::LeftParen, &format!("Expect '(' after {} name.", kind))?;
+        let mut parameters = Vec::new();
+        if self.current_token().token_type != TokenType::RightParen {
+            self.consume();
+            loop {
+                if parameters.len() > 127 {
+                    return Err(ParseError::new("Cannot have more then 127 arguments.".to_string(),self.current_token().line))
+                }
+                parameters.push(self.check_and_consume(TokenType::Identifier, "Expectd paramter name")?);
+            
+                if self.current_token().token_type != TokenType::Comma {
+                    break;
+                }
+                self.consume(); // eat the ','
+            }
+        }
+        self.check_and_consume(TokenType::RightParen, "Expected ')' after parameters.")?;
+        self.check_and_consume(TokenType::RightParen, "Expected '{' after function declaration.")?;
+        let body = self.block()?;
+
+        Ok(Stmt::new_function(name, parameters, body))
     }
 
     fn break_statement(&mut self) -> Result<Stmt, ParseError> {
@@ -294,10 +320,23 @@ impl Parser {
                 let expr = self.unary()?;
                 Ok(Expr::new_unary(operator, expr))
             },
-            _ => self.literal(),
+            _ => self.call(),
         }   
     }
 
+    fn call(&mut self) -> Result<Expr, ParseError> {
+        let mut expr: Expr = self.literal()?;
+
+        loop {
+            if self.current_token().token_type == TokenType::LeftParen {
+                self.consume(); // eat the '('
+                expr = self.finishCall(expr)?;
+            } else {
+                break;
+            }
+        }
+        Ok(expr)
+    }
 
     fn literal(&mut self) -> Result<Expr, ParseError> {
         let token = self.current_token();
@@ -348,9 +387,27 @@ impl Parser {
         }
     }
 
-/*
-    EqualEqual, Bang, BangEqual,
-*/
+
+    fn finishCall(&mut self, callee: Expr) -> Result<Expr, ParseError> {
+        let mut arguments: Vec<Expr> = Vec::new();
+        if self.current_token().token_type != TokenType::RightParen {
+            loop{
+                arguments.push(self.expression()?);
+                
+                if arguments.len() > 127 {
+                    return Err(ParseError::new("Cannot have more then 127 arguments.".to_string(),self.current_token().line))
+                }
+                if self.current_token().token_type != TokenType::Comma {
+                    break;
+                }
+                self.consume(); // eat the ','
+            }
+        }
+        let paren = self.check_and_consume(TokenType::RightParen, "Expected ')' after arguments.")?;
+    
+        Ok(Expr::new_call(callee, paren, arguments))
+    }
+
 
     fn consume_right_paren(&mut self) -> Result<Token, &str> {
         if TokenType::RightParen == self.current_token().token_type {

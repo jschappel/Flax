@@ -1,4 +1,5 @@
-use crate::ast::{Binary, Unary, Literal, Grouping, Expr, Stmt, Conditional, IfStatement, Logical};
+use crate::ast::{Binary, Unary, Literal, Grouping, Expr, Stmt, Conditional, IfStatement, 
+    Logical, Call};
 use crate::errors::{RuntimeError};
 use crate::lexer::{TokenType, Token};
 use crate::environment::{ Environment };
@@ -8,17 +9,24 @@ use std::fmt;
 
 
 pub struct Interpreter {
-    environment: Environment
+    pub globals: Environment
 }
 
 impl Interpreter {
     pub fn new() -> Interpreter {
-        Interpreter { environment: Environment::new() }
+        Interpreter { globals: Environment::new() }
     }
 
     pub fn interpret(&mut self, statements: Vec<Stmt>) -> Result<(), RuntimeError> {
         let mut env = Environment::new();
         for statement in statements {
+            statement.evaluate(self, &mut env)?;
+        }
+        Ok(())
+    }
+
+    pub fn interpret_function(&mut self, body: Vec<Stmt>, env: &mut Environment) -> Result<(), RuntimeError> {
+        for statement in body {
             statement.evaluate(self, &mut env)?;
         }
         Ok(())
@@ -81,6 +89,7 @@ impl Visit for Stmt {
                 }
                 return Ok(Value::Nil); // Dummy Value
             },
+            Stmt::FuncStmt(f) => Ok(Value::Nil), //TODO: Fix
             Stmt::Break => Ok(Value::Break),
             Stmt::IfStmt(ref stmt) => stmt.evaluate(interpreter, env),
         }
@@ -116,6 +125,7 @@ impl Visit for Expr {
             Expr::C(ref inside_val)     => inside_val.evaluate(interpreter, env),
             Expr::Log(ref inside_val)   => inside_val.evaluate(interpreter, env),
             Expr::V(ref token)          => env.get(token),
+            Expr::Cal(ref inside_val)   => inside_val.evaluate(interpreter, env),
             Expr::A(ref token, expr)    => {
                 let value: Value = expr.evaluate(interpreter, env)?;
                 env.assign(token, value.clone())?;
@@ -227,6 +237,14 @@ impl Visit for Logical {
             _ => Err(RuntimeError::new(self.tok.lexeme.clone(), "TODO: Better error handling".to_string(), self.tok.line)),
 
         }
+    }
+}
+
+impl Visit for Call {
+    fn evaluate(&self, interpreter: &mut Interpreter, env: &mut Environment) -> Result<Value, RuntimeError> {
+        let callee = self.callee.evaluate(interpreter, env)?;
+        let arguments: Vec<Value> = self.args.iter().map(|arg| arg.evaluate(interpreter, env).unwrap()).collect::<Vec<Value>>();
+        Ok(Value::Nil)
     }
 }
 

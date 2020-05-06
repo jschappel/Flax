@@ -1,4 +1,7 @@
 let i = 0;
+
+
+fn a = 1;
 while i < 10 {
     print "The value for i is: " ++ i;
     i += 3;
