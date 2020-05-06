@@ -152,20 +152,34 @@ impl Parser {
         self.assignment()
     }
 
-    // a = 10;
     fn assignment(&mut self) -> Result<Expr, ParseError> {
         let expr = self.logical_or()?;
+        match self.current_token().token_type {
+            TokenType::Equal => {
+                self.consume();
+                let value = self.assignment()?;
 
-        if self.current_token().token_type == TokenType::Equal {
-            self.consume();
-            let value = self.assignment()?;
-
-            if let Expr::V(tok) = expr {
-                return Ok(Expr::new_assignment(tok, value));
-            }
-            return Err(ParseError::new("Invalid assignment target".to_string(), self.current_token().line));
+                if let Expr::V(tok) = expr {
+                    return Ok(Expr::new_assignment(tok, value));
+                }
+                return Err(ParseError::new("Invalid assignment target".to_string(), self.current_token().line));
+            },
+            TokenType::PlusEqual | TokenType::MinusEqual => Ok(self.increment(expr)?),
+            _ => Ok(expr),
         }
-        Ok(expr)
+    }
+
+    fn increment(&mut self, expr: Expr) -> Result<Expr, ParseError> {
+        let token = match self.current_token().token_type {
+            TokenType::PlusEqual => Token::new(TokenType::Plus, "+".to_string(), self.current_token().line),
+            _ => Token::new(TokenType::Minus, "-".to_string(), self.current_token().line),
+        };
+        self.consume(); // eat += or -=
+        let right = self.addition()?;
+        if let Expr::V(ref tok) = expr {
+            return Ok(Expr::new_assignment(tok.clone(), Expr::new_binary(expr, token, right)));
+        }
+        return Err(ParseError::new("Invalid assignment target. Expected Value".to_string(), self.current_token().line));
     }
 
     fn logical_or(&mut self) -> Result<Expr, ParseError> {
@@ -369,8 +383,4 @@ impl Parser {
     fn is_at_end(&mut self) -> bool { 
         self.current_token().token_type == TokenType::EOF
     }
-}
-
-pub mod test {
-    
 }

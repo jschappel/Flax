@@ -10,6 +10,7 @@ pub enum TokenType {
     // operators 
     Plus, Minus, Star, Slash, EqualEqual, Equal, PlusPlus, Greater, Less,
      GreaterEqual, LessEqual, Bang, BangEqual, Semicolon, Colon, Question,
+     PlusEqual, MinusEqual,
 
     // Grouping
     LeftParen, RightParen, LeftBrace, RightBrace,
@@ -80,12 +81,12 @@ fn lex(line: String, line_num: u64) -> Result<Vec<Token>, LexError> {
             ')' => add_and_consume(Token::new(TokenType::RightParen, c.to_string(), line_num), &mut tokens, &mut it),
             '{' => add_and_consume(Token::new(TokenType::LeftBrace, c.to_string(), line_num), &mut tokens, &mut it),
             '}' => add_and_consume(Token::new(TokenType::RightBrace, c.to_string(), line_num), &mut tokens, &mut it),
-            '-' => add_and_consume(Token::new(TokenType::Minus, c.to_string(), line_num), &mut tokens, &mut it),
             '*' => add_and_consume(Token::new(TokenType::Star, c.to_string(), line_num), &mut tokens, &mut it),
             '/' => add_and_consume(Token::new(TokenType::Slash, c.to_string(), line_num), &mut tokens, &mut it),
             ';' => add_and_consume(Token::new(TokenType::Semicolon, c.to_string(), line_num), &mut tokens, &mut it),
             ':' => add_and_consume(Token::new(TokenType::Colon, c.to_string(), line_num), &mut tokens, &mut it),
             '?' => add_and_consume(Token::new(TokenType::Question, c.to_string(), line_num), &mut tokens, &mut it),
+            '-' => check_ahead_and_add(&mut tokens, line_num, &mut it)?,
             '+' => check_ahead_and_add(&mut tokens, line_num, &mut it)?,
             '=' => check_ahead_and_add(&mut tokens, line_num, &mut it)?,
             '!' => check_ahead_and_add(&mut tokens, line_num, &mut it)?,
@@ -112,11 +113,14 @@ fn check_ahead_and_add<I: Iterator<Item=char>>(tokens: &mut Vec<Token>, line_num
         "<" => Token::new(TokenType::Less, token, line_num),
         "+" => Token::new(TokenType::Plus, token, line_num),
         "!" => Token::new(TokenType::Bang, token, line_num),
+        "-" => Token::new(TokenType::Minus, token, line_num),
         "=" => Token::new(TokenType::Equal, token, line_num),
         ">=" => Token::new(TokenType::GreaterEqual, token, line_num),
         "<=" => Token::new(TokenType::LessEqual, token, line_num),
         "==" => Token::new(TokenType::EqualEqual, token, line_num),
         "++" => Token::new(TokenType::PlusPlus, token, line_num),
+        "+=" => Token::new(TokenType::PlusEqual, token, line_num),
+        "-=" => Token::new(TokenType::MinusEqual, token, line_num),
         "!=" => Token::new(TokenType::BangEqual, token, line_num),
         _ => return Err(LexError::new(line_num, format!("Invalid Character '{}'", token))),
     };
@@ -143,7 +147,7 @@ fn take_op<I: Iterator<Item=char>>(it: &mut Peekable<I>) -> String {
     let mut s = String::new();
     while let Some(val) = it.peek() {
         match val {
-            '>' | '=' | '<' | '!'| '+' => s.push(*val),
+            '>' | '=' | '<' | '!'| '+' | '-'=> s.push(*val),
             _=> break,
         }
         it.next();
@@ -301,7 +305,7 @@ mod test {
 
     #[test]
     fn lex_with_look_ahead() {
-        let tokens = lex_line(">= > + ++ < <= ! != = ==".to_string()).unwrap();
+        let tokens = lex_line(">= > + ++ < <= ! != = == - -= +=".to_string()).unwrap();
         let expected = vec![
             Token::new(TokenType::GreaterEqual, ">=".to_string(), 1),
             Token::new(TokenType::Greater, ">".to_string(), 1),
@@ -313,6 +317,9 @@ mod test {
             Token::new(TokenType::BangEqual, "!=".to_string(), 1),
             Token::new(TokenType::Equal, "=".to_string(), 1),
             Token::new(TokenType::EqualEqual, "==".to_string(), 1),
+            Token::new(TokenType::Minus, "-".to_string(), 1),
+            Token::new(TokenType::MinusEqual, "-=".to_string(), 1),
+            Token::new(TokenType::PlusEqual, "+=".to_string(), 1),
             Token::new(TokenType::EOF, String::new(), 1),
         ];
         assert_eq!(expected, tokens);

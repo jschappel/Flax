@@ -61,6 +61,10 @@ I have always been fascinated with programing languages and the different advant
 
 <assignment>        ::= IDENTIFIER "=" assignment
                      | <logical_or>
+                     | <increment>
+
+<increment>         ::= IDENTIFIER "+=" <addition>
+                     | IDENTIFIER "-=" <addition>
 
 <logical_or>        ::= logical_and ( "or" logical_and )*
 
@@ -102,6 +106,7 @@ I have always been fascinated with programing languages and the different advant
 - [X] Add lexical scoping to the language
 - [X] Add conditionals to the language
 - [X] Add loops to the language
-- [X] Make the language turing complete
+- [ ] Add += for assignment
+- [ ] Make the language turing complete
 - [ ] Add immutable variables to the language
 - [ ] Add Structures to the language
