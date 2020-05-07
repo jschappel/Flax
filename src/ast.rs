@@ -12,6 +12,7 @@ use std::fmt::{ Display };
 /// 2) ExprStmt: evaluates an expression
 /// 3) VarDecl: Variable declaration
 /// 4) Block: Block statement 
+#[derive(Debug, PartialEq, Clone)]
 pub enum Stmt {
     PrintStmt(Expr),
     ExprStmt(Expr),
@@ -20,6 +21,7 @@ pub enum Stmt {
     Block(Box<Vec<Stmt>>),
     WhileStmt(Expr, Box<Stmt>),
     FuncStmt(Box<Function>),
+    ReturnStmt(Box<Return>),
     Break,
 }
 
@@ -39,21 +41,31 @@ impl Stmt {
     pub fn new_function(name: Token, params: Vec<Token>, body: Stmt) -> Stmt {
         Stmt::FuncStmt(Box::new(Function { name, params, body }))
     }
+
+    pub fn new_return(tok: Token, expr: Option<Expr>) -> Stmt {
+        Stmt::ReturnStmt(Box::new(Return { tok, expr }))
+    }
 }
 
+#[derive(Debug, PartialEq, Clone)]
 pub struct IfStatement {
     pub conditional: Expr,
     pub then_block: Stmt,
     pub else_block: Option<Stmt>,
 }
 
+#[derive(PartialEq, Debug, Clone)]
 pub struct Function {
     pub name: Token,
     pub params: Vec<Token>,
     pub body: Stmt,
 }
 
-
+#[derive(PartialEq, Debug, Clone)]
+pub struct Return {
+    pub tok: Token,
+    pub expr: Option<Expr>,
+}
 
 
 /// An Expression can be one of the below types
@@ -61,7 +73,7 @@ pub struct Function {
 /// U: Unary
 /// B: Binary
 /// G: Grouping
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Expr {
     L(Literal),
     U(Box<Unary>),
@@ -113,7 +125,7 @@ impl Expr {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Grouping {
     pub expr: Expr
 }
@@ -127,7 +139,7 @@ impl Grouping {
 
 
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Binary {
     pub operator: Token,
     pub left: Expr,
@@ -143,7 +155,7 @@ impl Binary {
 
 
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Literal {
     pub val: String
 }
@@ -156,7 +168,7 @@ impl Literal {
 
 
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Unary {
     pub operator: Token,
     pub expr: Expr,
@@ -170,7 +182,7 @@ impl Unary {
 
 
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Conditional {
     pub cond: Expr,
     pub line_num: u64,
@@ -185,7 +197,7 @@ impl Conditional {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Logical {
     pub tok: Token,
     pub left: Expr,
@@ -193,7 +205,7 @@ pub struct Logical {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Call {
     pub callee: Expr,
     pub args: Vec<Expr>,
@@ -280,6 +292,7 @@ impl Display for Stmt {
             Stmt::WhileStmt(_,_) => write!(f, "Placeholder for while"),
             Stmt::Break => write!(f, "Placeholder for while"),
             Stmt::FuncStmt(_) => write!(f, "Placeholder for func stmt"),
+            Stmt::ReturnStmt(_) => write!(f, "Placeholder for return stmt"),
         }
     }
 }

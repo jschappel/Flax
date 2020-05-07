@@ -1,5 +1,6 @@
 use crate::ast::{Binary, Unary, Literal, Grouping, Expr, Stmt, Conditional, IfStatement, 
-    Logical, Call};
+    Logical, Call, Function, Return};
+use crate::callable::{FlaxFunction, FunctionTypes};
 use crate::errors::{RuntimeError};
 use crate::lexer::{TokenType, Token};
 use crate::environment::{ Environment };
@@ -14,22 +15,23 @@ pub struct Interpreter {
 
 impl Interpreter {
     pub fn new() -> Interpreter {
-        Interpreter { globals: Environment::new() }
+        let mut globals = Environment::new();
+        globals.define(String::from("clock"), Some(Value::Callable(FunctionTypes::Clock)));
+        Interpreter { globals }
     }
 
     pub fn interpret(&mut self, statements: Vec<Stmt>) -> Result<(), RuntimeError> {
-        let mut env = Environment::new();
+        let mut globals = self.globals.clone();
+
         for statement in statements {
-            statement.evaluate(self, &mut env)?;
+            statement.evaluate(self, &mut globals)?;
         }
         Ok(())
     }
 
-    pub fn interpret_function(&mut self, body: Vec<Stmt>, env: &mut Environment) -> Result<(), RuntimeError> {
-        for statement in body {
-            statement.evaluate(self, &mut env)?;
-        }
-        Ok(())
+    pub fn interpret_function(&mut self, body: &Stmt, env: &mut Environment) -> Result<Value, RuntimeError> {
+      let value = body.evaluate(self, env)?;
+      Ok(value)
     }
 
     // fn add_global_var(&mut self, name: String, value: Value) {
@@ -43,6 +45,7 @@ impl Interpreter {
     // fn update_global(&mut self, token: &Token, value: Value) -> Result<(), RuntimeError> {
     //     self.environment.assign(token, value)
     // }
+
 }
 
 
@@ -73,9 +76,7 @@ impl Visit for Stmt {
             Stmt::Block(ref stmts) => {
                 let mut new_env = env.new_lexical();
                 for statement in stmts.iter() {
-                    if statement.evaluate(interpreter, &mut new_env)? == Value::Break {
-                       return Ok(Value::Break);
-                    }
+                    statement.evaluate(interpreter, &mut new_env)?;
                 }
                 // TODO:: Better memory management
                 *env = new_env.return_outer_scope();
@@ -83,16 +84,31 @@ impl Visit for Stmt {
             },
             Stmt::WhileStmt(ref cond, ref body) => {
                 while is_truthy(&cond.evaluate(interpreter, env)?) {
-                   if body.evaluate(interpreter, env)? == Value::Break {
-                       break;
+                   if let Err(err) = body.evaluate(interpreter, env) {
+                       if err == RuntimeError::Break {
+                           break;
+                       } else {
+                           return Err(err);
+                       }
                    }
                 }
                 return Ok(Value::Nil); // Dummy Value
             },
-            Stmt::FuncStmt(f) => Ok(Value::Nil), //TODO: Fix
-            Stmt::Break => Ok(Value::Break),
+            Stmt::FuncStmt(func) => func.evaluate(interpreter, env),
+            Stmt::ReturnStmt(stmt) => stmt.evaluate(interpreter, env),
+            Stmt::Break => Err(RuntimeError::Break),
             Stmt::IfStmt(ref stmt) => stmt.evaluate(interpreter, env),
         }
+    }
+}
+
+impl Visit for Return{
+    fn evaluate(&self, interpreter: &mut Interpreter, env: &mut Environment) -> Result<Value, RuntimeError> {
+        let value = match &self.expr {
+            Some(expr) => Some(expr.evaluate(interpreter, env)?),
+            None => None,
+        };
+        Err(RuntimeError::Return(value))
     }
 }
 
@@ -108,9 +124,19 @@ impl Visit for IfStatement {
                     }
                 }
                 return Ok(self.then_block.evaluate(interpreter, env)?);
+
             },
             _ => self.then_block.evaluate(interpreter, env),
         }
+    }
+}
+
+impl Visit for Function {
+    fn evaluate(&self, _interpreter: &mut Interpreter, env: &mut Environment) -> Result<Value, RuntimeError> {
+        let function = Value::Callable(FunctionTypes::new_function(self.clone()));
+
+        env.define(self.name.lexeme.clone(), Some(function));
+        Ok(Value::Nil)
     }
 }
 
@@ -153,7 +179,7 @@ impl Visit for Literal {
             }
         }
         else {
-            Err(RuntimeError::new(String::new(), format!("Invalid literal value, given: {}", self.val), 1)) //TODO:Better Error handling
+            return Err(RuntimeError::no_token_error("", String::from("Invalid literal value, given: {}"), 1)) //TODO: better error handling
         }
     }
 }
@@ -175,7 +201,7 @@ impl Visit for Binary {
             TokenType::LessEqual => determine_int_comparison((left, right), &self.operator),
             TokenType::Greater => determine_int_comparison((left, right), &self.operator),
             TokenType::GreaterEqual => determine_int_comparison((left, right), &self.operator),
-            _ => Err(RuntimeError::new(self.operator.lexeme.clone(), format!("Expected expression, given {}", self.operator.lexeme), self.operator.line)),
+            _ => Err(RuntimeError::string_error(&self.operator, format!("Expected expression, given {}", self.operator.lexeme))),
         }
     }
 }
@@ -189,10 +215,10 @@ impl Visit for Unary {
                 if let Value::NUMBER(v) = expr {
                    return Ok(Value::NUMBER(-1.0 * v));
                 }
-                Err(RuntimeError::new(self.operator.lexeme.clone(), "Invalid unary expression.  Expected Number".to_string(), self.operator.line))
+                Err(RuntimeError::str_error(&self.operator,  "Invalid unary expression.  Expected Number"))
             },
             TokenType::Bang => Ok(Value::BOOL(!is_truthy(&expr))),
-            _ => Err(RuntimeError::new(self.operator.lexeme.clone(), "Invalid token for Unary".to_string(), self.operator.line)),
+            _ => Err(RuntimeError::str_error(&self.operator, "Invalid token for Unary"))
         }
     }
 }
@@ -208,7 +234,7 @@ impl Visit for Conditional {
                     _ => Ok(self.else_expr.evaluate(interpreter, env)?),
                 }
             },
-            _ => Err(RuntimeError::new("?".to_string(), format!("expected boolean given {}", cond), self.line_num)),
+            _ => Err(RuntimeError::no_token_error("?", format!("expected boolean given {}", cond), self.line_num)),
         }
     }
 }
@@ -234,8 +260,7 @@ impl Visit for Logical {
                     return Ok(left);
                 }
             },
-            _ => Err(RuntimeError::new(self.tok.lexeme.clone(), "TODO: Better error handling".to_string(), self.tok.line)),
-
+            _ => Err(RuntimeError::str_error(&self.tok, "TODO: Better error handling")),
         }
     }
 }
@@ -244,7 +269,15 @@ impl Visit for Call {
     fn evaluate(&self, interpreter: &mut Interpreter, env: &mut Environment) -> Result<Value, RuntimeError> {
         let callee = self.callee.evaluate(interpreter, env)?;
         let arguments: Vec<Value> = self.args.iter().map(|arg| arg.evaluate(interpreter, env).unwrap()).collect::<Vec<Value>>();
-        Ok(Value::Nil)
+        let mut value = Value::Nil;
+
+        if let Value::Callable(callable) = callee {
+            if callable.arity() != self.args.len() as u8 {
+                return Err(RuntimeError::str_error(&self.tok, "Invalid callee"))
+            }
+           value = callable.call(interpreter, arguments)?;       
+        }
+        Ok(value)
     }
 }
 
@@ -263,7 +296,7 @@ pub enum Value {
     STRING(String),
     NUMBER(f64),
     Nil,
-    Break,
+    Callable(FunctionTypes)
 }
 
 
@@ -276,11 +309,16 @@ fn check_numbers(paris: (Value, Value), op: &Token) -> Result<Value, RuntimeErro
                 TokenType::Minus => Ok(Value::NUMBER(left - right)),
                 TokenType::Plus => Ok(Value::NUMBER(left + right)),
                 TokenType::Star => Ok(Value::NUMBER(left * right)),
-                TokenType::Slash => Ok(Value::NUMBER(left / right)),
-                _ => Err(RuntimeError::new(op.lexeme.clone(), format!("Invalid binary operator for numbers, given {}", op.lexeme), op.line)),
+                TokenType::Slash => {
+                    if right == 0.0 {
+                        return Err(RuntimeError::DivideByZero(op.line))
+                    }
+                    Ok(Value::NUMBER(left / right))
+                },
+                _ => Err(RuntimeError::string_error(op, format!("Invalid binary operator for numbers, given {}", op.lexeme))),
             }
         }
-        _ => Err(RuntimeError::new(op.lexeme.clone(), format!("'{}' can only be applied to numbers, given: {}, {}", op.lexeme.clone(), paris.0, paris.1), op.line)),
+        _ => Err(RuntimeError::string_error(op, format!("'{}' can only be applied to numbers, given: {}, {}", op.lexeme.clone(), paris.0, paris.1))),
     }
 }
 
@@ -302,7 +340,7 @@ fn concatenate_values(pairs: (Value, Value), token: &Token) -> Result<Value, Run
             s.push_str(&v2);
             Ok(Value::STRING(s))
         },
-        _ => Err(RuntimeError::new(token.lexeme.clone(), format!("'{}' can only be applied to String and Numbers, given: {}, {}", token.lexeme, pairs.0, pairs.1), token.line)),
+        _ => Err(RuntimeError::string_error(token, format!("'{}' can only be applied to String and Numbers, given: {}, {}", token.lexeme, pairs.0, pairs.1))),
     }
 }
 
@@ -327,7 +365,7 @@ fn determine_equality(pair: (Value, Value), token: &Token) -> Result<Value, Runt
                 _ => Ok(Value::BOOL(true)),
             }
         },
-        _ => Err(RuntimeError::new(token.lexeme.clone(), "Invalid token type. Expected '==' or '!='.".to_string(), token.line)),
+        _ => Err(RuntimeError::str_error(token, "Invalid token type. Expected '==' or '!='.")),
     }
 }
 
@@ -342,7 +380,7 @@ fn determine_int_comparison(pair: (Value, Value), token: &Token) -> Result<Value
                 _ => panic!("Expected boolean values")
             } 
         }, 
-        _ => Err(RuntimeError::new(token.lexeme.clone(), "Expected two numbers.".to_string(), token.line)),
+        _ => Err(RuntimeError::str_error(token, "Expected two numbers")),
     }
 }
 
@@ -365,9 +403,8 @@ impl fmt::Display for Value {
             Value::Nil => write!(f, "nil"),
             Value::STRING(val) => write!(f, "\"{}\"", val),
             Value::NUMBER(val) => write!(f, "{}", val),
-            Value::Break => write!(f, "break"),
+            Value::Callable(func) => write!(f, "{}", func),
+            _ => write!(f, "Other"),
         }
     }
 }
-
-

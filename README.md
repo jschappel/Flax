@@ -31,6 +31,9 @@ I have always been fascinated with programing languages and the different advant
                  | <exprStmt>
                  | <block>
                  | <break>
+                 | <returnStmt>
+
+<returnStmt>     | "return" expression? ";"
 
 <break>         ::= "break" ";"
 

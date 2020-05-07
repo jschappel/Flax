@@ -74,9 +74,23 @@ impl Parser {
             TokenType::If => self.if_statement(),
             TokenType::LeftBrace => {self.consume(); self.block()},
             TokenType::While => self.while_stmt(),
+            TokenType::Return => self.return_stmt(),
             TokenType::Break => self.break_statement(),
             _ => self.expression_statement(),
         }
+    }
+
+    fn return_stmt(&mut self) -> Result<Stmt, ParseError> {
+        let token = self.current_token().clone();
+        self.consume(); // eat the return token
+        let mut expr = None;
+
+        if self.current_token().token_type != TokenType::Semicolon {
+            expr = Some(self.expression()?); 
+        }
+
+        self.check_and_consume(TokenType::Semicolon, "Expected ';' after return value")?;
+        Ok(Stmt::new_return(token, expr))
     }
 
     fn function(&mut self, kind: &str) -> Result<Stmt, ParseError> {
@@ -84,12 +98,11 @@ impl Parser {
         self.check_and_consume(TokenType::LeftParen, &format!("Expect '(' after {} name.", kind))?;
         let mut parameters = Vec::new();
         if self.current_token().token_type != TokenType::RightParen {
-            self.consume();
             loop {
                 if parameters.len() > 127 {
                     return Err(ParseError::new("Cannot have more then 127 arguments.".to_string(),self.current_token().line))
                 }
-                parameters.push(self.check_and_consume(TokenType::Identifier, "Expectd paramter name")?);
+                parameters.push(self.check_and_consume(TokenType::Identifier, "Expected parameter name")?);
             
                 if self.current_token().token_type != TokenType::Comma {
                     break;
@@ -97,8 +110,8 @@ impl Parser {
                 self.consume(); // eat the ','
             }
         }
-        self.check_and_consume(TokenType::RightParen, "Expected ')' after parameters.")?;
-        self.check_and_consume(TokenType::RightParen, "Expected '{' after function declaration.")?;
+        self.check_and_consume(TokenType::RightParen, "Expected ')' after parameters")?;
+        self.check_and_consume(TokenType::LeftBrace, "Expected '{' after function declaration")?;
         let body = self.block()?;
 
         Ok(Stmt::new_function(name, parameters, body))
@@ -330,7 +343,7 @@ impl Parser {
         loop {
             if self.current_token().token_type == TokenType::LeftParen {
                 self.consume(); // eat the '('
-                expr = self.finishCall(expr)?;
+                expr = self.finish_call(expr)?;
             } else {
                 break;
             }
@@ -388,7 +401,7 @@ impl Parser {
     }
 
 
-    fn finishCall(&mut self, callee: Expr) -> Result<Expr, ParseError> {
+    fn finish_call(&mut self, callee: Expr) -> Result<Expr, ParseError> {
         let mut arguments: Vec<Expr> = Vec::new();
         if self.current_token().token_type != TokenType::RightParen {
             loop{

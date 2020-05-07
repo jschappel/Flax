@@ -1,5 +1,8 @@
 use std::fmt;
 use std::error::Error;
+use crate::lexer::Token;
+use crate::interpreter::Value;
+
 // A Lex Error is an error that the Lexer can throw 
 #[derive(Debug)]
 pub struct LexError {
@@ -14,26 +17,45 @@ pub struct ParseError {
     msg: String
 }
 
-#[derive(Debug)]
-pub struct RuntimeError {
-    line: u64,
-    msg: String,
-    operator: String, 
+
+#[derive(Debug, PartialEq)]
+pub enum RuntimeError {
+    RuntimeError(String, u64, String),
+    DivideByZero(u64),
+    Return(Option<Value>),
+    Break,
 }
 
-
-
-
-
 impl RuntimeError {
-    pub fn new(op: String, msg: String, line: u64) -> RuntimeError {
-        RuntimeError { operator: op, msg: msg, line: line }
+    pub fn string_error(token: &Token, msg: String) -> RuntimeError {
+        let line = token.line;
+        let op = token.lexeme.clone();
+        RuntimeError::RuntimeError(op, line, msg)
+    }
+    
+    pub fn str_error(token: &Token, msg: &str) -> RuntimeError {
+        let line = token.line;
+        let op = token.lexeme.clone();
+        RuntimeError::RuntimeError(op, line, msg.to_string())
+    }
+
+    pub fn no_token_error(operator: &str, msg: String,  line: u64) -> RuntimeError {
+        RuntimeError::RuntimeError(operator.to_string(), line, msg)
     }
 }
 
+
 impl fmt::Display for RuntimeError {
     fn fmt(&self, f: &mut fmt::Formatter<>) -> fmt::Result {
-        write!(f, "[Runtime Error at line {}]: {}", self.line, self.msg)
+        match self {
+            RuntimeError::RuntimeError(_op, line, msg) => {
+                write!(f, "[RuntimeError line {}]: {}", line, msg)
+            },
+            RuntimeError::DivideByZero(line) => {
+                write!(f, "[RuntimeError line {}]: Cannot Divide by 0", line)
+            }
+            _ => write!(f, "RuntimeError"),
+        }
     }
 }
 

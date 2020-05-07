@@ -38,7 +38,8 @@ impl Environment {
             None => {
                 match self.enclosing {
                     EnvType::Scoped(ref mut env) => env.get(token), 
-                    EnvType::Global => Err(RuntimeError::new(token.lexeme.clone(), "Undefined Variable".to_string(), token.line))
+                    EnvType::Global => Err(RuntimeError::string_error(&token, format!("Undefined Identifier: {}", token.lexeme)))
+
                 }
             }
         }
@@ -53,7 +54,7 @@ impl Environment {
         if let EnvType::Scoped(ref mut x) = self.enclosing {
             return x.assign(token, value);
         }
-        Err(RuntimeError::new(token.lexeme.clone(), "Undefined Variable".to_string(), token.line))
+        Err(RuntimeError::string_error(&token, format!("Undefined identifier: {}", token.lexeme)))
     }
 
     // TODO:: Better memory management
