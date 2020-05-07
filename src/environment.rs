@@ -3,13 +3,13 @@ use crate::interpreter::Value;
 use crate::errors::RuntimeError;
 use crate::lexer::Token;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum EnvType {
     Global,
     Scoped(Box<Environment>)
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Environment {
     enclosing: EnvType,
     values: HashMap<String, Value>

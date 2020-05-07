@@ -30,8 +30,8 @@ impl Interpreter {
     }
 
     pub fn interpret_function(&mut self, body: &Stmt, env: &mut Environment) -> Result<Value, RuntimeError> {
-      let value = body.evaluate(self, env)?;
-      Ok(value)
+        let value = body.evaluate(self, env)?;
+        Ok(value)
     }
 
     // fn add_global_var(&mut self, name: String, value: Value) {
@@ -134,7 +134,6 @@ impl Visit for IfStatement {
 impl Visit for Function {
     fn evaluate(&self, _interpreter: &mut Interpreter, env: &mut Environment) -> Result<Value, RuntimeError> {
         let function = Value::Callable(FunctionTypes::new_function(self.clone()));
-
         env.define(self.name.lexeme.clone(), Some(function));
         Ok(Value::Nil)
     }
@@ -269,15 +268,13 @@ impl Visit for Call {
     fn evaluate(&self, interpreter: &mut Interpreter, env: &mut Environment) -> Result<Value, RuntimeError> {
         let callee = self.callee.evaluate(interpreter, env)?;
         let arguments: Vec<Value> = self.args.iter().map(|arg| arg.evaluate(interpreter, env).unwrap()).collect::<Vec<Value>>();
-        let mut value = Value::Nil;
-
         if let Value::Callable(callable) = callee {
             if callable.arity() != self.args.len() as u8 {
                 return Err(RuntimeError::str_error(&self.tok, "Invalid callee"))
             }
-           value = callable.call(interpreter, arguments)?;       
+           return Ok(callable.call(interpreter, arguments, env.clone())?)       
         }
-        Ok(value)
+        Err(RuntimeError::no_token_error("", String::from("Can only call functions"), 10)) //TODO: Better error handling
     }
 }
 
@@ -404,7 +401,6 @@ impl fmt::Display for Value {
             Value::STRING(val) => write!(f, "\"{}\"", val),
             Value::NUMBER(val) => write!(f, "{}", val),
             Value::Callable(func) => write!(f, "{}", func),
-            _ => write!(f, "Other"),
         }
     }
 }

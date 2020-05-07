@@ -1,15 +1,15 @@
 use crate::ast;
 use crate::interpreter;
-//use crate::environment;
+use crate::environment;
 use crate::errors::RuntimeError;
-//use environment::Environment;
+use environment::Environment;
 use interpreter::{Interpreter, Value};
 use ast::Function as AstFunc;
 
 use std::fmt;
 
 trait Callable {
-    fn call(&self, interpreter: &mut Interpreter, args: Vec<Value>) -> Result<Value, RuntimeError>;
+    fn call(&self, interpreter: &mut Interpreter, args: Vec<Value>, env: Environment) -> Result<Value, RuntimeError>;
     fn arity(&self) -> u8;
 }
 
@@ -26,9 +26,9 @@ impl FunctionTypes {
 }
 
 impl FunctionTypes {
-    pub fn call(&self, interpreter: &mut Interpreter, args: Vec<Value>) -> Result<Value, RuntimeError> {
+    pub fn call(&self, interpreter: &mut Interpreter, args: Vec<Value>, env: Environment) -> Result<Value, RuntimeError> {
         match self {
-            FunctionTypes::Function(func) => func.call(interpreter, args),
+            FunctionTypes::Function(func) => func.call(interpreter, args, env),
             Clock => clock(),
         }
     }
@@ -57,8 +57,8 @@ impl FlaxFunction {
 
 
 impl Callable for FlaxFunction {
-    fn call(&self, interpreter: &mut Interpreter, args: Vec<Value>) -> Result<Value, RuntimeError> {
-        let mut env = interpreter.globals.new_lexical();
+    fn call(&self, interpreter: &mut Interpreter, args: Vec<Value>, env: Environment) -> Result<Value, RuntimeError> {
+        let mut env = env.clone().new_lexical();
         for (i, token) in self.declaration.params.iter().enumerate() {
             env.define(token.lexeme.clone(), Some(args[i].clone()))
         }

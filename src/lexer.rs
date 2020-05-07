@@ -24,6 +24,7 @@ pub enum TokenType {
     EOF
 }
 
+
 #[derive(PartialEq, Debug, Clone)]
 pub struct Token {
     pub token_type: TokenType,
@@ -52,7 +53,7 @@ pub fn lex_file(filename: &str) -> Result<Vec<Token>, LexError> {
 
     for (i, val) in buf_reader.lines().enumerate() {
         match val {
-            Ok(line) => tokens.append(&mut lex(line, i as u64)?),
+            Ok(line) => tokens.append(&mut lex(line, (i + 1) as u64)?),
             Err(e) => return Err(LexError::new(i as u64, format!("Error reading from file: {}", e))),
         }
         max = i;
@@ -82,7 +83,8 @@ fn lex(line: String, line_num: u64) -> Result<Vec<Token>, LexError> {
             '{' => add_and_consume(Token::new(TokenType::LeftBrace, c.to_string(), line_num), &mut tokens, &mut it),
             '}' => add_and_consume(Token::new(TokenType::RightBrace, c.to_string(), line_num), &mut tokens, &mut it),
             '*' => add_and_consume(Token::new(TokenType::Star, c.to_string(), line_num), &mut tokens, &mut it),
-            '/' => add_and_consume(Token::new(TokenType::Slash, c.to_string(), line_num), &mut tokens, &mut it),
+            //'/' => add_and_consume(Token::new(TokenType::Slash, c.to_string(), line_num), &mut tokens, &mut it),
+            '/' => determine_comments(*c, &mut tokens, line_num, &mut it)?,
             ';' => add_and_consume(Token::new(TokenType::Semicolon, c.to_string(), line_num), &mut tokens, &mut it),
             ':' => add_and_consume(Token::new(TokenType::Colon, c.to_string(), line_num), &mut tokens, &mut it),
             '?' => add_and_consume(Token::new(TokenType::Question, c.to_string(), line_num), &mut tokens, &mut it),
@@ -105,6 +107,32 @@ fn lex(line: String, line_num: u64) -> Result<Vec<Token>, LexError> {
 fn add_and_consume<I: Iterator<Item=char>>(token: Token, v: &mut Vec<Token>, it: &mut Peekable<I>) {
     v.push(token);
     it.next();
+}
+
+
+
+fn determine_comments<I: Iterator<Item=char>>(c: char, tokens: &mut Vec<Token>, line_num: u64, it: &mut Peekable<I>) -> Result<(), LexError> {
+    it.next();
+    if let Some(val) = it.peek() {
+        return match val {
+            '/' => {
+                it.next();
+                while let Some(c) = it.peek() {
+                    if *c == '\n' {
+                        return Ok(())
+                    }
+                    it.next();
+                }
+                Ok(())
+            },
+            _ => {
+                add_and_consume(Token::new(TokenType::Slash, c.to_string(), line_num), tokens, it);
+                Ok(())
+            },
+        }
+    }
+    add_and_consume(Token::new(TokenType::Slash, c.to_string(), line_num), tokens, it);
+    Ok(())
 }
 
 fn check_ahead_and_add<I: Iterator<Item=char>>(tokens: &mut Vec<Token>, line_num: u64, it: &mut Peekable<I>) -> Result<(), LexError> {
@@ -403,6 +431,19 @@ mod test {
     #[test]
     fn lex_statement() {
         let tokens = lex_line("print a = 4;".to_string()).unwrap();
+        let expected = vec![
+            Token::new(TokenType::Print, "print".to_string(), 1),
+            Token::new(TokenType::Identifier, "a".to_string(), 1),
+            Token::new(TokenType::Equal, "=".to_string(), 1),
+            Token::new(TokenType::NUMBER, "4".to_string(), 1),
+            Token::new(TokenType::Semicolon, ";".to_string(), 1),
+            Token::new(TokenType::EOF, String::new(), 1),
+        ];
+        assert_eq!(expected, tokens);
+    }
+    #[test]
+    fn lex_with_comment() {
+        let tokens = lex_line("print a = 4; //This is a comment;".to_string()).unwrap();
         let expected = vec![
             Token::new(TokenType::Print, "print".to_string(), 1),
             Token::new(TokenType::Identifier, "a".to_string(), 1),
