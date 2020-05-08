@@ -139,6 +139,24 @@ I have always been fascinated with programing languages and the different advant
     4 - 1;
     ```
 
+- logic operators:
+    ```javascript
+    true and true   // true
+    false or true   // true 
+    !true           // false 
+    ```
+
+- Equality: 
+    ```javascript
+    "1" == 1        // true
+    "2" != "3"      // true
+    4 <= 5          // true
+    4 >= 5          // false
+    5 > 7           // false
+    5 < 7           // true 
+    ```
+
+
 - string concatenation
     ```haskell
     "Foo" ++ "Bar";
