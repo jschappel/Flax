@@ -228,7 +228,7 @@ I have always been fascinated with programing languages and the different advant
         if x < 2 {
             return 1;
         }
-        return factorial(x-1);
+        return x * factorial(x-1);
     }
 
     let ans = factorial(5);
