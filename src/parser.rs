@@ -70,7 +70,6 @@ impl Parser {
     fn statement(&mut self) -> Result<Stmt, ParseError> {
         match self.current_token().token_type {
             TokenType::Func => {self.consume(); self.function("function")},
-            TokenType::Print => self.print_statement(),
             TokenType::If => self.if_statement(),
             TokenType::LeftBrace => {self.consume(); self.block()},
             TokenType::While => self.while_stmt(),
@@ -164,17 +163,6 @@ impl Parser {
         Ok(Stmt::new_block(statements))
     }
 
-    fn print_statement(&mut self) -> Result<Stmt, ParseError> {
-        self.consume(); // consume the print token
-        let expr: Expr = self.expression()?;
-        match self.current_token().token_type {
-            TokenType::Semicolon => {
-                self.consume();
-                Ok(Stmt::PrintStmt(expr))
-            },
-            _ => Err(ParseError::new("Expected ';'".to_string(), self.current_token().line)),
-        }
-    }
 
     fn expression_statement(&mut self) -> Result<Stmt, ParseError> {
         let expr: Expr = self.expression()?;

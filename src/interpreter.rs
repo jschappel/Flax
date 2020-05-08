@@ -1,11 +1,12 @@
+use std::fmt;
+
 use crate::ast::{Binary, Unary, Literal, Grouping, Expr, Stmt, Conditional, IfStatement, 
     Logical, Call, Function, Return};
-use crate::callable::{FlaxFunction, FunctionTypes};
+use crate::callable::{FunctionTypes};
 use crate::errors::{RuntimeError};
 use crate::lexer::{TokenType, Token};
 use crate::environment::{ Environment };
-use std::fmt;
-
+use crate::native_functions::NativeFunctions;
 
 
 
@@ -15,8 +16,7 @@ pub struct Interpreter {
 
 impl Interpreter {
     pub fn new() -> Interpreter {
-        let mut globals = Environment::new();
-        globals.define(String::from("clock"), Some(Value::Callable(FunctionTypes::Clock)));
+        let globals = Self::create_environment();
         Interpreter { globals }
     }
 
@@ -34,18 +34,14 @@ impl Interpreter {
         Ok(value)
     }
 
-    // fn add_global_var(&mut self, name: String, value: Value) {
-    //     self.environment.define(name, Some(value))
-    // }
 
-    // fn get_global_var(&mut self, token: &Token) -> Result<Value, RuntimeError> {
-    //     self.environment.get(token)
-    // }
-
-    // fn update_global(&mut self, token: &Token, value: Value) -> Result<(), RuntimeError> {
-    //     self.environment.assign(token, value)
-    // }
-
+    fn create_environment() -> Environment {
+        let mut globals = Environment::new();
+        globals.define(String::from("clock"), Some(Value::new_native_function(NativeFunctions::Clock)));
+        globals.define(String::from("println"), Some(Value::new_native_function(NativeFunctions::new_println_func(Value::Nil))));
+        globals.define(String::from("print"), Some(Value::new_native_function(NativeFunctions::new_print_func(Value::Nil))));
+        globals
+    }
 }
 
 
@@ -57,11 +53,6 @@ pub trait Visit {
 impl Visit for Stmt {
     fn evaluate(&self, interpreter: &mut Interpreter, env: &mut Environment) -> Result<Value, RuntimeError> {
         match self {
-            Stmt::PrintStmt(expr) => {
-                let value: Value = expr.evaluate(interpreter, env)?;
-                println!("{}", value);
-                Ok(value)
-            },
             Stmt::ExprStmt(expr) => expr.evaluate(interpreter, env),
             Stmt::VarDecl(token, opt) => {
                 match opt {
@@ -272,7 +263,7 @@ impl Visit for Call {
             if callable.arity() != self.args.len() as u8 {
                 return Err(RuntimeError::str_error(&self.tok, "Invalid callee"))
             }
-           return Ok(callable.call(interpreter, arguments, env.clone())?)       
+           return Ok(callable.call(interpreter, arguments, env)?)       
         }
         Err(RuntimeError::no_token_error("", String::from("Can only call functions"), 10)) //TODO: Better error handling
     }
@@ -294,6 +285,12 @@ pub enum Value {
     NUMBER(f64),
     Nil,
     Callable(FunctionTypes)
+}
+
+impl Value {
+    pub fn new_native_function(func: NativeFunctions) -> Value {
+        Value::Callable(FunctionTypes::new_native_func(func))
+    }
 }
 
 
@@ -400,7 +397,7 @@ impl fmt::Display for Value {
             Value::Nil => write!(f, "nil"),
             Value::STRING(val) => write!(f, "\"{}\"", val),
             Value::NUMBER(val) => write!(f, "{}", val),
-            Value::Callable(func) => write!(f, "{}", func),
+            Value::Callable(func) => write!(f, "{:?}", func),
         }
     }
 }

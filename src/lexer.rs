@@ -16,7 +16,7 @@ pub enum TokenType {
     LeftParen, RightParen, LeftBrace, RightBrace,
 
     // Reserved Identifiers
-    Identifier, Print, Let, If, Else, And, Or, While, Break, Func, Return,
+    Identifier, Let, If, Else, And, Or, While, Break, Func, Return,
 
     // Prims
     NUMBER, STRING, TRUE, FALSE, Nil,
@@ -209,7 +209,6 @@ fn determine_identifier(s: &String) -> TokenType {
         "true"  => TokenType::TRUE,
         "false" => TokenType::FALSE,
         "nil"   => TokenType::Nil,
-        "print" => TokenType::Print,
         "let"   => TokenType::Let,
         "if"    => TokenType::If,
         "else"  => TokenType::Else,
@@ -411,9 +410,8 @@ mod test {
 
     #[test]
     fn reserved_identifiers() {
-        let tokens = lex_line("print let if else and or while break func return".to_string()).unwrap();
+        let tokens = lex_line("let if else and or while break func return".to_string()).unwrap();
         let expected = vec![
-            Token::new(TokenType::Print, "print".to_string(), 1),
             Token::new(TokenType::Let, "let".to_string(), 1),
             Token::new(TokenType::If, "if".to_string(), 1),
             Token::new(TokenType::Else, "else".to_string(), 1),
@@ -432,7 +430,7 @@ mod test {
     fn lex_statement() {
         let tokens = lex_line("print a = 4;".to_string()).unwrap();
         let expected = vec![
-            Token::new(TokenType::Print, "print".to_string(), 1),
+            Token::new(TokenType::Identifier, "print".to_string(), 1),
             Token::new(TokenType::Identifier, "a".to_string(), 1),
             Token::new(TokenType::Equal, "=".to_string(), 1),
             Token::new(TokenType::NUMBER, "4".to_string(), 1),
@@ -445,7 +443,7 @@ mod test {
     fn lex_with_comment() {
         let tokens = lex_line("print a = 4; //This is a comment;".to_string()).unwrap();
         let expected = vec![
-            Token::new(TokenType::Print, "print".to_string(), 1),
+            Token::new(TokenType::Identifier, "print".to_string(), 1),
             Token::new(TokenType::Identifier, "a".to_string(), 1),
             Token::new(TokenType::Equal, "=".to_string(), 1),
             Token::new(TokenType::NUMBER, "4".to_string(), 1),

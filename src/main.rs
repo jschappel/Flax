@@ -6,7 +6,7 @@ mod errors;
 mod interpreter;
 mod environment;
 mod callable;
-
+mod native_functions;
 
 fn main() {
 

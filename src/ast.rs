@@ -14,7 +14,6 @@ use std::fmt::{ Display };
 /// 4) Block: Block statement 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Stmt {
-    PrintStmt(Expr),
     ExprStmt(Expr),
     IfStmt(Box<IfStatement>),
     VarDecl(Token, Option<Expr>),
@@ -280,7 +279,6 @@ impl Display for Stmt {
     fn fmt(&self, f: &mut fmt::Formatter<>) -> fmt::Result {
         match self {
             Stmt::ExprStmt(expr) => write!(f, "{}", expr),
-            Stmt::PrintStmt(expr) => write!(f, "{}", expr),
             Stmt::VarDecl(name, expr) => {
                 match expr {
                     Some(e) => write!(f, "(name = {})", e),
