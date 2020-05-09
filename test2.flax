@@ -1,0 +1,8 @@
+let name = "Joshua Schappel";
+
+let index = 0;
+while index < len(name) {
+    println(charAt(index, name));
+
+    index+=1;
+}
