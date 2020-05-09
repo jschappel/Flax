@@ -7,6 +7,7 @@ use crate::errors::{RuntimeError};
 use crate::lexer::{TokenType, Token};
 use crate::environment::{ Environment };
 use crate::native_functions::NativeFunctions;
+use crate::strlib::StrLib;
 
 
 
@@ -40,6 +41,10 @@ impl Interpreter {
         globals.define(String::from("clock"), Some(Value::new_native_function(NativeFunctions::Clock)));
         globals.define(String::from("println"), Some(Value::new_native_function(NativeFunctions::new_println_func(Value::Nil))));
         globals.define(String::from("print"), Some(Value::new_native_function(NativeFunctions::new_print_func(Value::Nil))));
+        globals.define(String::from("len"), Some(Value::new_str_function(StrLib::Len)));
+        globals.define(String::from("charAt"), Some(Value::new_str_function(StrLib::CharAt)));
+        globals.define(String::from("subString"), Some(Value::new_str_function(StrLib::SubStr)));
+
         globals
     }
 }
@@ -290,6 +295,10 @@ pub enum Value {
 impl Value {
     pub fn new_native_function(func: NativeFunctions) -> Value {
         Value::Callable(FunctionTypes::new_native_func(func))
+    }
+
+    pub fn new_str_function(func: StrLib) -> Value {
+        Value::Callable(FunctionTypes::str_lib_func(func))
     }
 }
 

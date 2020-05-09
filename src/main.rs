@@ -7,6 +7,7 @@ mod interpreter;
 mod environment;
 mod callable;
 mod native_functions;
+mod strlib;
 
 fn main() {
 

@@ -5,6 +5,7 @@ use crate::interpreter;
 use crate::environment;
 use crate::errors::RuntimeError;
 use crate::native_functions::NativeFunctions;
+use crate::strlib::StrLib;
 
 use environment::Environment;
 use interpreter::{Interpreter, Value};
@@ -21,6 +22,7 @@ pub trait Callable {
 pub enum FunctionTypes {
     Function(FlaxFunction),
     NativeFunction(NativeFunctions),
+    StringLibrary(Box<StrLib>),
 }
 
 impl FunctionTypes {
@@ -31,6 +33,10 @@ impl FunctionTypes {
     pub fn new_native_func(func: NativeFunctions) -> FunctionTypes {
         FunctionTypes::NativeFunction(func)
     }
+
+    pub fn str_lib_func(func: StrLib) -> FunctionTypes {
+        FunctionTypes::StringLibrary(Box::new(func))
+    }
 }
 
 impl FunctionTypes {
@@ -38,6 +44,7 @@ impl FunctionTypes {
         match self {
             FunctionTypes::Function(func) => func.call(interpreter, args, env),
             FunctionTypes::NativeFunction(func) => func.call(interpreter, args, env),
+            FunctionTypes::StringLibrary(func) => func.call(interpreter, args, env),
         }
     }
 
@@ -45,6 +52,7 @@ impl FunctionTypes {
         match self {
             FunctionTypes::Function(func) => func.arity(),
             FunctionTypes::NativeFunction(func) => func.arity(),
+            FunctionTypes::StringLibrary(func) => func.arity(),
         }
     }
 }
@@ -96,6 +104,7 @@ impl fmt::Debug for FunctionTypes {
         match self {
             FunctionTypes::Function(func) => write!(f, "<fn {}>", func.declaration.name),
             FunctionTypes::NativeFunction(func) => write!(f, "{:?}", func),
+            FunctionTypes::StringLibrary(func) => write!(f, "{:?}", func),
         }
     }
 }
