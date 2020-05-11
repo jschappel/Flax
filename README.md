@@ -233,3 +233,11 @@ I have always been fascinated with programing languages and the different advant
 
     let ans = factorial(5);
     ```
+    
+-String functions:
+```javascript
+let name = "Joshua";
+len(name);            // 6
+charAt(0, name)       // "J"
+subString(0, 3, name) // "Jos"
+```
