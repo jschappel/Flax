@@ -234,7 +234,7 @@ I have always been fascinated with programing languages and the different advant
     let ans = factorial(5);
     ```
     
--String functions:
+- string library functions:
 ```javascript
 let name = "Joshua";
 len(name);            // 6
