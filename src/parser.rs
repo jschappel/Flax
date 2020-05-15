@@ -71,7 +71,7 @@ impl Parser {
         match self.current_token().token_type {
             TokenType::Func => {self.consume(); self.function("function")},
             TokenType::If => self.if_statement(),
-            TokenType::LeftBrace => {self.consume(); self.block()},
+            TokenType::LeftBrace => {self.consume(); self.make_block()},
             TokenType::While => self.while_stmt(),
             TokenType::Return => self.return_stmt(),
             TokenType::Break => self.break_statement(),
@@ -130,7 +130,7 @@ impl Parser {
         let condition = self.expression()?;
         self.check_and_consume(TokenType::LeftBrace, "Expected '{' after while condition")?;
         self.loops +=1; // Increment the loop counter
-        let block = self.block()?;
+        let block = self.make_block()?;
         self.loops -=1; // Decrease the loop counter after all statements have been parsed
         Ok(Stmt::new_while(condition, block))
     }
@@ -139,12 +139,12 @@ impl Parser {
         self.consume(); // consume the if Stmt
         let expr: Expr = self.expression()?;
         self.check_and_consume(TokenType::LeftBrace, "Expected block expression after a if expression")?;
-        let then_block = self.block()?;
+        let then_block = self.make_block()?;
 
         if self.current_token().token_type == TokenType::Else {
             self.consume(); // consume the else
             self.check_and_consume(TokenType::LeftBrace, "Expected block expression after a else expression")?;
-            let else_block = self.block()?;
+            let else_block = self.make_block()?;
             return Ok(Stmt::new_if(expr, then_block, Some(else_block)));
         }
 
@@ -152,7 +152,12 @@ impl Parser {
     }
 
 
-    fn block(&mut self) -> Result<Stmt, ParseError> {
+    fn make_block(&mut self) -> Result<Stmt, ParseError>  {
+        let statements = self.block()?;
+        Ok(Stmt::new_block(statements))
+    }
+
+    fn block(&mut self) -> Result<Vec<Stmt>, ParseError> {
         let mut statements = Vec::new();
         while self.current_token().token_type != TokenType::RightBrace && !self.is_at_end() {
             let statement = self.declaration()?;
@@ -160,7 +165,7 @@ impl Parser {
         }
 
         self.check_and_consume(TokenType::RightBrace, "Expected '}'")?;
-        Ok(Stmt::new_block(statements))
+        Ok(statements)
     }
 
 

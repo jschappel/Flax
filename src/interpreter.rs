@@ -12,13 +12,15 @@ use crate::strlib::StrLib;
 
 
 pub struct Interpreter {
-    pub globals: Environment
+    pub globals: Environment,
+    pub environment: Environment,
 }
 
 impl Interpreter {
     pub fn new() -> Interpreter {
         let globals = Self::create_environment();
-        Interpreter { globals }
+        let environment = globals.clone();
+        Interpreter { globals, environment }
     }
 
     pub fn interpret(&mut self, statements: Vec<Stmt>) -> Result<(), RuntimeError> {
@@ -29,12 +31,12 @@ impl Interpreter {
         }
         Ok(())
     }
-
-    pub fn interpret_function(&mut self, body: &Stmt, env: &mut Environment) -> Result<Value, RuntimeError> {
+/*
+    pub fn execute_block(&mut self, body: &Stmt, env: &mut Environment) -> Result<Value, RuntimeError> {
         let value = body.evaluate(self, env)?;
         Ok(value)
     }
-
+*/
 
     fn create_environment() -> Environment {
         let mut globals = Environment::new();
@@ -70,12 +72,7 @@ impl Visit for Stmt {
                 return Ok(Value::Nil); // Dummy Value
             },
             Stmt::Block(ref stmts) => {
-                let mut new_env = env.new_lexical();
-                for statement in stmts.iter() {
-                    statement.evaluate(interpreter, &mut new_env)?;
-                }
-                // TODO:: Better memory management
-                *env = new_env.return_outer_scope();
+                execute_block(&stmts, interpreter, env)?;
                 return Ok(Value::Nil); // Dummy Value
             },
             Stmt::WhileStmt(ref cond, ref body) => {
@@ -96,6 +93,15 @@ impl Visit for Stmt {
             Stmt::IfStmt(ref stmt) => stmt.evaluate(interpreter, env),
         }
     }
+}
+
+pub fn execute_block(statements: &Vec<Stmt>, interpreter: &mut Interpreter, env: &mut Environment) -> Result<(), RuntimeError> {
+    let mut new_env = env.new_lexical();
+    for statement in statements.iter() {
+        statement.evaluate(interpreter, &mut new_env)?;
+    }
+    *env = new_env.return_outer_scope();
+    Ok(())
 }
 
 impl Visit for Return{

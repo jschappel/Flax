@@ -8,7 +8,7 @@ use crate::native_functions::NativeFunctions;
 use crate::strlib::StrLib;
 
 use environment::Environment;
-use interpreter::{Interpreter, Value};
+use interpreter::{Interpreter, Value, execute_block};
 use ast::Function as AstFunc;
 
 
@@ -73,12 +73,14 @@ impl FlaxFunction {
 
 
 impl Callable for FlaxFunction {
-    fn call(&self, interpreter: &mut Interpreter, args: Vec<Value>, env: &mut Environment) -> Result<Value, RuntimeError> {
-        let mut env = env.clone().new_lexical();
+    fn call(&self, interpreter: &mut Interpreter, args: Vec<Value>, _env: &mut Environment) -> Result<Value, RuntimeError> {
+        let mut env = interpreter.globals.clone().new_lexical();
         for (i, token) in self.declaration.params.iter().enumerate() {
             env.define(token.lexeme.clone(), Some(args[i].clone()))
         }
-        let value = interpreter.interpret_function(&self.declaration.body, &mut env);
+        println!("{:#?}", env);
+
+        let value = execute_block(&self.declaration.body, interpreter, &mut env);
         match value {
             Ok(_value) => Ok(Value::Nil),
             Err(e) => {

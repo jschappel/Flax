@@ -1,8 +1,11 @@
-let name = "Joshua Schappel";
 
-let index = 0;
-while index < len(name) {
-    println(charAt(index, name));
+func add(x) {
+    if x < 0 {
+        return;
+    }
 
-    index+=1;
+    println(x);
+    add(x-1);
 }
+
+add(100);

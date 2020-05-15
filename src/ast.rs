@@ -37,7 +37,7 @@ impl Stmt {
         Stmt::WhileStmt(condition, Box::new(block))
     }
 
-    pub fn new_function(name: Token, params: Vec<Token>, body: Stmt) -> Stmt {
+    pub fn new_function(name: Token, params: Vec<Token>, body: Vec<Stmt>) -> Stmt {
         Stmt::FuncStmt(Box::new(Function { name, params, body }))
     }
 
@@ -57,7 +57,7 @@ pub struct IfStatement {
 pub struct Function {
     pub name: Token,
     pub params: Vec<Token>,
-    pub body: Stmt,
+    pub body: Vec<Stmt>,
 }
 
 #[derive(PartialEq, Debug, Clone)]
