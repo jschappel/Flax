@@ -274,6 +274,7 @@ impl Visit for Call {
             if callable.arity() != self.args.len() as u8 {
                 return Err(RuntimeError::str_error(&self.tok, "Invalid callee"))
             }
+           // println!("{:#?}", interpreter.globals);
            return Ok(callable.call(interpreter, arguments, env)?)       
         }
         Err(RuntimeError::no_token_error("", String::from("Can only call functions"), 10)) //TODO: Better error handling

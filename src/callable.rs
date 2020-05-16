@@ -73,13 +73,12 @@ impl FlaxFunction {
 
 
 impl Callable for FlaxFunction {
-    fn call(&self, interpreter: &mut Interpreter, args: Vec<Value>, _env: &mut Environment) -> Result<Value, RuntimeError> {
-        let mut env = interpreter.globals.clone().new_lexical();
+    fn call(&self, interpreter: &mut Interpreter, args: Vec<Value>, env: &mut Environment) -> Result<Value, RuntimeError> {
+        let mut env = env.clone().new_lexical();
         for (i, token) in self.declaration.params.iter().enumerate() {
             env.define(token.lexeme.clone(), Some(args[i].clone()))
         }
-        println!("{:#?}", env);
-
+        
         let value = execute_block(&self.declaration.body, interpreter, &mut env);
         match value {
             Ok(_value) => Ok(Value::Nil),
