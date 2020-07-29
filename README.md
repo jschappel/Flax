@@ -124,6 +124,9 @@ I have always been fascinated with programing languages and the different advant
 - [X] Add increments (+= -=)
 - [X] Add functions to the language
 - [X] Add basic native functions to the language
+- [X] Add string library
+- [X] Add testing library
+- [ ] Add anonymous functions to the language
 - [ ] Add lists to the language
 - [ ] Make the language turing complete
 - [ ] Add immutable variables to the language
@@ -173,7 +176,7 @@ I have always been fascinated with programing languages and the different advant
     x = 2;
     ```
 
-- Scoping: 
+- scoping: 
     ```javascript
     let x = 10;
     let y = 20;
@@ -234,10 +237,26 @@ I have always been fascinated with programing languages and the different advant
     let ans = factorial(5);
     ```
     
-- string library functions:
+### String Library
+- len(string) -> returns the length of the given string.
+- charAt(index, string) -> returns the character at the given index in the string.
+- subString(startIndex, endIndex, string) -> returns a substring of the given string.
 ```javascript
 let name = "Joshua";
 len(name);            // 6
 charAt(0, name)       // "J"
 subString(0, 3, name) // "Jos"
+```
+
+### Testing Library
+- assert(value) -> Throws Assertion Error if the value is not true.
+- assertEq(value, value) -> Throws Assertion Error if the values are not equal to each other.
+```rust
+assert(10); // none
+assert("Hello"); // none
+assert(false) // AssertError
+
+assertEq(10, 10) // none
+assertEq(false, false) // none
+assertEq(false, true) // AssertError
 ```
