@@ -332,7 +332,6 @@ impl Parser {
 
     fn call(&mut self) -> Result<Expr, ParseError> {
         let mut expr: Expr = self.literal()?;
-
         loop {
             if self.current_token().token_type == TokenType::LeftParen {
                 self.consume(); // eat the '('

@@ -77,13 +77,13 @@ impl Visit for Stmt {
             },
             Stmt::WhileStmt(ref cond, ref body) => {
                 while is_truthy(&cond.evaluate(interpreter, env)?) {
-                   if let Err(err) = body.evaluate(interpreter, env) {
-                       if err == RuntimeError::Break {
+                    if let Err(err) = body.evaluate(interpreter, env) {
+                        if err == RuntimeError::Break {
                            break;
-                       } else {
+                        } else {
                            return Err(err);
-                       }
-                   }
+                        }
+                    }
                 }
                 return Ok(Value::Nil); // Dummy Value
             },
@@ -104,7 +104,7 @@ pub fn execute_block(statements: &Vec<Stmt>, interpreter: &mut Interpreter, env:
     Ok(())
 }
 
-impl Visit for Return{
+impl Visit for Return {
     fn evaluate(&self, interpreter: &mut Interpreter, env: &mut Environment) -> Result<Value, RuntimeError> {
         let value = match &self.expr {
             Some(expr) => Some(expr.evaluate(interpreter, env)?),
@@ -135,7 +135,7 @@ impl Visit for IfStatement {
 
 impl Visit for Function {
     fn evaluate(&self, _interpreter: &mut Interpreter, env: &mut Environment) -> Result<Value, RuntimeError> {
-        let function = Value::Callable(FunctionTypes::new_function(self.clone()));
+        let function = Value::Callable(FunctionTypes::new_function(self.clone(), env.clone()));
         env.define(self.name.lexeme.clone(), Some(function));
         Ok(Value::Nil)
     }
@@ -155,7 +155,8 @@ impl Visit for Expr {
             Expr::Cal(ref inside_val)   => inside_val.evaluate(interpreter, env),
             Expr::A(ref token, expr)    => {
                 let value: Value = expr.evaluate(interpreter, env)?;
-                env.assign(token, value.clone())?;
+                env.assign(token, value.clone())?; //TODO: is this needed?
+                // TODOFIX: value is not being set to 11 for some reason?????
                 Ok(value)
             }
         }
@@ -274,7 +275,6 @@ impl Visit for Call {
             if callable.arity() != self.args.len() as u8 {
                 return Err(RuntimeError::str_error(&self.tok, "Invalid callee"))
             }
-           // println!("{:#?}", interpreter.globals);
            return Ok(callable.call(interpreter, arguments, env)?)       
         }
         Err(RuntimeError::no_token_error("", String::from("Can only call functions"), 10)) //TODO: Better error handling
@@ -350,7 +350,7 @@ fn concatenate_values(pairs: (Value, Value), token: &Token) -> Result<Value, Run
             s.push_str(&v2);
             Ok(Value::STRING(s))
         },
-        _ => Err(RuntimeError::string_error(token, format!("'{}' can only be applied to String and Numbers, given: {}, {}", token.lexeme, pairs.0, pairs.1))),
+        _ => Err(RuntimeError::string_error(token, format!("'{}' can only be used for String Concatenation, given: {}, {}", token.lexeme, pairs.0, pairs.1))),
     }
 }
 

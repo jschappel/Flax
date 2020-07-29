@@ -1,21 +1,34 @@
-use std::io;
-use std::io::Write;
-use std::env;
-
 use crate::lexer;
 use crate::interpreter;
 use crate::parser;
+use crate::errors::ComplierError;
+
+use std::io;
+use std::io::Write;
+use std::env;
 use parser::{Parser};
 use colored::*;
+
+type ReplResult = std::result::Result<(), ComplierError>;
 
 
 pub fn run_repl() {
     //Check if REPL was run with args
     let args: Vec<String> = env::args().collect();
     if args.len() > 1 {
-        let filename = &args[1];
-        parse_file(filename);
-        std::process::exit(0);
+        if args.contains(&"--debug".to_owned()) {
+            let path = &args[1];
+            if let Err(error) = print_ast(path) {
+                println!("{}", error.to_string().red());
+            }
+            std::process::exit(0);
+        } else {
+            let path = &args[1];
+            if let Err(error) = interpret_file(path) {
+                println!("{}", error.to_string().red());
+            }
+            std::process::exit(0);
+        }   
     }
 
     println!("{}", "Welcome to Flax! v0.1".purple());
@@ -41,12 +54,16 @@ pub fn run_repl() {
                 mode = ReplMode::Normal;
                 println!("{}", "Now in normal mode".yellow());
             },
-            _ => evaluate(buffer, &mode),
+            _ => {
+                if let Err(e) = evaluate(buffer, &mode) {
+                    println!("{}", e.to_string().red());
+                }
+            },
         }       
     }
 }
 
-fn evaluate(stmt: &str, repl_mode: &ReplMode) {
+fn evaluate(stmt: &str, repl_mode: &ReplMode) -> ReplResult {
     match repl_mode {
         ReplMode::Normal => parse_statement(stmt),
         ReplMode::Debug => debug_parse_statement(stmt),
@@ -54,61 +71,35 @@ fn evaluate(stmt: &str, repl_mode: &ReplMode) {
 }
 
 
-fn parse_statement(stmt: &str) {
-    match lexer::lex_line(stmt.to_string()) {
-        Ok(tokens) => {
-            let mut parser = Parser::new(tokens);
-            match parser.parse() {
-                Ok(statements) => {
-                    let mut interpreter = interpreter::Interpreter::new();
-                    let result = interpreter.interpret(statements);
-                    match result {
-                        Err(e) => println!("{}", e.to_string().red()),
-                        _ => (),
-                    }
-                },
-                Err(e) => println!("{}", e.to_string().red())
-            }
-        },
-        Err(e) => println!("{}", e.to_string().red()),
-    }
+fn parse_statement(stmt: &str) -> ReplResult {
+    let tokens = lexer::lex_line(stmt.to_string())?;
+    let ast = Parser::new(tokens).parse()?;
+    interpreter::Interpreter::new().interpret(ast)?;
+    Ok(())
 }
 
-fn parse_file(filename: &str) {
-    let tokens = lexer::lex_file(filename);
-    match tokens {
-        Ok(tokens) => {
-            let mut parser = Parser::new(tokens);
-            match parser.parse() {
-                Ok(statements) => {
-                    let mut interpreter = interpreter::Interpreter::new();
-                    let result = interpreter.interpret(statements);
-                    match result {
-                        Err(e) => println!("{}", e.to_string().red()),
-                        _ => (),
-                    }
-                },
-                Err(e) => println!("{}", e.to_string().red()),
-            }
-        },
-        Err(e) => println!("{}", e.to_string().red()),
-    }
+fn interpret_file(filename: &str) -> ReplResult {
+    let tokens = lexer::lex_file(filename)?;
+    let ast = Parser::new(tokens).parse()?;
+    interpreter::Interpreter::new().interpret(ast)?;
+    Ok(())
 }
 
-// Debug mode prints the ast
-fn debug_parse_statement(stmt: &str) {
-    match lexer::lex_line(stmt.to_string()) {
-        Ok(tokens) => {
-            let mut parser = Parser::new(tokens);
-            match parser.parse_expression() {
-                Ok(expr) => {
-                    println!("{}", expr);
-                },
-                Err(e) => println!("{}", e.to_string().red()),
-            }
-        },
-        Err(e) => println!("{}", e.to_string().red()),
-    }
+/// Prints the ast that the parser produces for a expression
+// TODO: Remove
+fn debug_parse_statement(input: &str) -> ReplResult {
+    let tokens = lexer::lex_line(input.to_string())?;
+    let expr = Parser::new(tokens).parse_expression()?;
+    println!("{}", expr);
+    Ok(())
+}
+
+/// Prints the ast that the parser produces for a file
+fn print_ast(path: &str) -> ReplResult {
+    let tokens = lexer::lex_file(path)?;
+    let ast = Parser::new(tokens).parse()?;
+    println!("{:#?}", ast);
+    Ok(())
 }
 
 #[derive(PartialEq)]

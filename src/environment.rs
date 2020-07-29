@@ -52,9 +52,9 @@ impl Environment {
     }
 
     // TODO:: Better memory management
-    pub fn return_outer_scope(&mut self) -> Environment {
+    pub fn return_outer_scope(self) -> Environment {
         match self.enclosing {
-            None => self.clone(),
+            None => self,
             Some(ref env) => *env.clone(),
         }
     }

@@ -26,8 +26,8 @@ pub enum FunctionTypes {
 }
 
 impl FunctionTypes {
-    pub fn new_function(declaration: AstFunc) -> FunctionTypes {
-        FunctionTypes::Function(FlaxFunction::new(declaration))
+    pub fn new_function(declaration: AstFunc, closure: Environment) -> FunctionTypes {
+        FunctionTypes::Function(FlaxFunction::new(declaration, closure))
     }
 
     pub fn new_native_func(func: NativeFunctions) -> FunctionTypes {
@@ -63,18 +63,21 @@ impl FunctionTypes {
 #[derive(PartialEq, Debug, Clone)]
 pub struct FlaxFunction {
     declaration: AstFunc,
+    closure: Environment,
 }
 
 impl FlaxFunction {
-    pub fn new(declaration: AstFunc) -> FlaxFunction {
-        FlaxFunction { declaration }
+    pub fn new(declaration: AstFunc, closure: Environment) -> FlaxFunction {
+        FlaxFunction { declaration, closure }
     }
 }
 
 
 impl Callable for FlaxFunction {
     fn call(&self, interpreter: &mut Interpreter, args: Vec<Value>, env: &mut Environment) -> Result<Value, RuntimeError> {
-        let mut env = env.clone().new_lexical();
+        // println!("{:#?}", self.closure); //Todo: CLEAN UP
+        //println!("{:#?}", env);
+        let mut env = self.closure.clone().new_lexical();
         for (i, token) in self.declaration.params.iter().enumerate() {
             env.define(token.lexeme.clone(), Some(args[i].clone()))
         }

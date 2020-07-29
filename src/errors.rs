@@ -1,5 +1,5 @@
 use std::fmt;
-use std::error::Error;
+use std::convert::From;
 use crate::lexer::Token;
 use crate::interpreter::Value;
 
@@ -9,12 +9,23 @@ pub struct LexError {
     line: u64,
     msg: String,
 }
+impl LexError {
+    pub fn new(line: u64, msg: String) -> LexError {
+        LexError { line, msg }
+    }
+}
+
 
 // A Parse Error is an error that the Parser can throw 
 #[derive(Debug)]
 pub struct ParseError {
     line: u64,
     msg: String
+}
+impl ParseError {
+    pub fn new(msg:String, line: u64,) -> ParseError {
+        ParseError { line, msg }
+    }
 }
 
 
@@ -24,6 +35,32 @@ pub enum RuntimeError {
     DivideByZero(u64),
     Return(Option<Value>),
     Break,
+}
+
+
+/// This is only used for the repel
+pub enum ComplierError {
+    LexError(LexError),
+    ParseError(ParseError),
+    RuntimeError(RuntimeError),
+}
+
+impl From<LexError> for ComplierError {
+    fn from(error: LexError) -> Self {
+        ComplierError::LexError(error)
+    }
+}
+
+impl From<ParseError> for ComplierError {
+    fn from(error: ParseError) -> Self {
+        ComplierError::ParseError(error)
+    }
+}
+
+impl From<RuntimeError> for ComplierError {
+    fn from(error: RuntimeError) -> Self {
+        ComplierError::RuntimeError(error)
+    }
 }
 
 impl RuntimeError {
@@ -45,6 +82,28 @@ impl RuntimeError {
 }
 
 
+impl fmt::Display for LexError {
+    fn fmt(&self, f: &mut fmt::Formatter<>) -> fmt::Result {
+        write!(f, "[LexerError line {}]: {}", self.line, self.msg)
+    }
+}
+
+impl fmt::Display for ParseError {
+    fn fmt(&self, f: &mut fmt::Formatter<>) -> fmt::Result {
+        write!(f, "[ParseError line {}]: {}", self.line, self.msg)
+    }
+}
+
+impl fmt::Display for ComplierError {
+    fn fmt(&self, f: &mut fmt::Formatter<>) -> fmt::Result {
+        match self {
+            ComplierError::LexError(e)     =>  write!(f, "{}", e),
+            ComplierError::ParseError(e)   =>  write!(f, "{}", e),
+            ComplierError::RuntimeError(e) =>  write!(f, "{}", e),
+        }
+    }
+}
+
 impl fmt::Display for RuntimeError {
     fn fmt(&self, f: &mut fmt::Formatter<>) -> fmt::Result {
         match self {
@@ -54,42 +113,7 @@ impl fmt::Display for RuntimeError {
             RuntimeError::DivideByZero(line) => {
                 write!(f, "[RuntimeError line {}]: Cannot Divide by 0", line)
             }
-            _ => write!(f, "RuntimeError"),
+            _ => write!(f, "RuntimeError: TODO: FINISH"), //TODO: Finish here????
         }
-    }
-}
-
-impl Error for RuntimeError {
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        // Generic error, underlying cause isn't tracked.
-        None
-    }
-}
-
-
-
-impl LexError {
-    pub fn new(line: u64, msg: String) -> LexError {
-        LexError { line, msg }
-    }
-}
-
-impl fmt::Display for LexError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{} at line: {}", self.msg, self.line)
-    }
-}
-
-
-
-impl ParseError {
-    pub fn new(msg:String, line: u64,) -> ParseError {
-        ParseError { line, msg }
-    }
-}
-
-impl fmt::Display for ParseError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{} at line: {}", self.msg, self.line)
     }
 }
