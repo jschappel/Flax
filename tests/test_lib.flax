@@ -1,0 +1,12 @@
+assert(10);
+assert(true);
+
+assertEq(true, true);
+assertEq(false, false);
+assertEq(5.5, 5.5);
+
+
+// Below will throw error
+// assert(false);
+// assert(nil);
+

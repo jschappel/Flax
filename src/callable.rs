@@ -5,7 +5,8 @@ use crate::interpreter;
 use crate::environment;
 use crate::errors::RuntimeError;
 use crate::native_functions::NativeFunctions;
-use crate::strlib::StrLib;
+use crate::library::strlib::StrLib;
+use crate::library::testlib::TestLib;
 
 use environment::Environment;
 use interpreter::{Interpreter, Value, execute_block};
@@ -22,6 +23,7 @@ pub trait Callable {
 pub enum FunctionTypes {
     Function(FlaxFunction),
     NativeFunction(NativeFunctions),
+    TestLibrary(TestLib),
     StringLibrary(Box<StrLib>),
 }
 
@@ -37,6 +39,10 @@ impl FunctionTypes {
     pub fn str_lib_func(func: StrLib) -> FunctionTypes {
         FunctionTypes::StringLibrary(Box::new(func))
     }
+
+    pub fn test_lib_func(func: TestLib) -> FunctionTypes {
+        FunctionTypes::TestLibrary(func)
+    }
 }
 
 impl FunctionTypes {
@@ -45,6 +51,7 @@ impl FunctionTypes {
             FunctionTypes::Function(func) => func.call(interpreter, args, env),
             FunctionTypes::NativeFunction(func) => func.call(interpreter, args, env),
             FunctionTypes::StringLibrary(func) => func.call(interpreter, args, env),
+            FunctionTypes::TestLibrary(func) => func.call(interpreter, args, env),
         }
     }
 
@@ -53,6 +60,7 @@ impl FunctionTypes {
             FunctionTypes::Function(func) => func.arity(),
             FunctionTypes::NativeFunction(func) => func.arity(),
             FunctionTypes::StringLibrary(func) => func.arity(),
+            FunctionTypes::TestLibrary(func) => func.arity(),
         }
     }
 }
@@ -74,7 +82,7 @@ impl FlaxFunction {
 
 
 impl Callable for FlaxFunction {
-    fn call(&self, interpreter: &mut Interpreter, args: Vec<Value>, env: &mut Environment) -> Result<Value, RuntimeError> {
+    fn call(&self, interpreter: &mut Interpreter, args: Vec<Value>, _env: &mut Environment) -> Result<Value, RuntimeError> {
         // println!("{:#?}", self.closure); //Todo: CLEAN UP
         //println!("{:#?}", env);
         let mut env = self.closure.clone().new_lexical();
@@ -109,6 +117,7 @@ impl fmt::Debug for FunctionTypes {
             FunctionTypes::Function(func) => write!(f, "<fn {}>", func.declaration.name),
             FunctionTypes::NativeFunction(func) => write!(f, "{:?}", func),
             FunctionTypes::StringLibrary(func) => write!(f, "{:?}", func),
+            FunctionTypes::TestLibrary(func) => write!(f, "{:?}", func),
         }
     }
 }

@@ -1,0 +1,13 @@
+
+
+func addTen(number) {
+    let final = number + 10;
+    while number < final {
+        number+=1;
+    }
+   
+    return number;
+}
+
+let ans = addTen(10);
+println(ans); // should print 20;

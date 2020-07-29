@@ -1,0 +1,7 @@
+// prints the next ten numbers
+let number = 10;
+let end = number + 10 + 1;
+while number < end {
+  println("The number is: " ++ number);
+  number+=1;  
+}

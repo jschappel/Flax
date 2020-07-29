@@ -1,3 +1,4 @@
+mod library;
 mod lexer;
 mod ast;
 mod repl;
@@ -7,9 +8,7 @@ mod interpreter;
 mod environment;
 mod callable;
 mod native_functions;
-mod strlib;
 
 fn main() {
-
     repl::run_repl();
 }

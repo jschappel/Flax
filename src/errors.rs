@@ -32,6 +32,7 @@ impl ParseError {
 #[derive(Debug, PartialEq)]
 pub enum RuntimeError {
     RuntimeError(String, u64, String),
+    AssertError(Value, Value, u64),
     DivideByZero(u64),
     Return(Option<Value>),
     Break,
@@ -112,7 +113,10 @@ impl fmt::Display for RuntimeError {
             },
             RuntimeError::DivideByZero(line) => {
                 write!(f, "[RuntimeError line {}]: Cannot Divide by 0", line)
-            }
+            },
+            RuntimeError::AssertError(expected, actual, line) => {
+                write!(f, "[AssertError line {}]: Expected {}, given {}", line, expected, actual)
+            },
             _ => write!(f, "RuntimeError: TODO: FINISH"), //TODO: Finish here????
         }
     }

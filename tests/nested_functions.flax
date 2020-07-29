@@ -1,0 +1,8 @@
+func add(number) {
+    func addFive(n) {
+        return n + 5;
+    }
+    return addFive(number);
+}
+
+println(add(10)); // prints 10

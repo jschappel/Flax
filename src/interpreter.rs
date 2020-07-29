@@ -7,9 +7,10 @@ use crate::errors::{RuntimeError};
 use crate::lexer::{TokenType, Token};
 use crate::environment::{ Environment };
 use crate::native_functions::NativeFunctions;
-use crate::strlib::StrLib;
+use crate::library::strlib::StrLib;
+use crate::library::testlib::TestLib;
 
-
+pub type RuntimeResult<T> = std::result::Result<T, RuntimeError>;
 
 pub struct Interpreter {
     pub globals: Environment,
@@ -23,7 +24,7 @@ impl Interpreter {
         Interpreter { globals, environment }
     }
 
-    pub fn interpret(&mut self, statements: Vec<Stmt>) -> Result<(), RuntimeError> {
+    pub fn interpret(&mut self, statements: Vec<Stmt>) -> RuntimeResult<()> {
         let mut globals = self.globals.clone();
 
         for statement in statements {
@@ -46,19 +47,20 @@ impl Interpreter {
         globals.define(String::from("len"), Some(Value::new_str_function(StrLib::Len)));
         globals.define(String::from("charAt"), Some(Value::new_str_function(StrLib::CharAt)));
         globals.define(String::from("subString"), Some(Value::new_str_function(StrLib::SubStr)));
-
+        globals.define(String::from("assert"), Some(Value::new_test_function(TestLib::Assert)));
+        globals.define(String::from("assertEq"), Some(Value::new_test_function(TestLib::AssertEq)));
         globals
     }
 }
 
 
 pub trait Visit {
-    fn evaluate(&self, interpreter: &mut Interpreter, env: &mut Environment) -> Result<Value, RuntimeError>;
+    fn evaluate(&self, interpreter: &mut Interpreter, env: &mut Environment) -> RuntimeResult<Value>;
 }
 
 
 impl Visit for Stmt {
-    fn evaluate(&self, interpreter: &mut Interpreter, env: &mut Environment) -> Result<Value, RuntimeError> {
+    fn evaluate(&self, interpreter: &mut Interpreter, env: &mut Environment) -> RuntimeResult<Value> {
         match self {
             Stmt::ExprStmt(expr) => expr.evaluate(interpreter, env),
             Stmt::VarDecl(token, opt) => {
@@ -95,7 +97,7 @@ impl Visit for Stmt {
     }
 }
 
-pub fn execute_block(statements: &Vec<Stmt>, interpreter: &mut Interpreter, env: &mut Environment) -> Result<(), RuntimeError> {
+pub fn execute_block(statements: &Vec<Stmt>, interpreter: &mut Interpreter, env: &mut Environment) -> RuntimeResult<()> {
     let mut new_env = env.new_lexical();
     for statement in statements.iter() {
         statement.evaluate(interpreter, &mut new_env)?;
@@ -105,7 +107,7 @@ pub fn execute_block(statements: &Vec<Stmt>, interpreter: &mut Interpreter, env:
 }
 
 impl Visit for Return {
-    fn evaluate(&self, interpreter: &mut Interpreter, env: &mut Environment) -> Result<Value, RuntimeError> {
+    fn evaluate(&self, interpreter: &mut Interpreter, env: &mut Environment) -> RuntimeResult<Value> {
         let value = match &self.expr {
             Some(expr) => Some(expr.evaluate(interpreter, env)?),
             None => None,
@@ -115,7 +117,7 @@ impl Visit for Return {
 }
 
 impl Visit for IfStatement {
-    fn evaluate(&self, interpreter: &mut Interpreter, env: &mut Environment) -> Result<Value, RuntimeError> {
+    fn evaluate(&self, interpreter: &mut Interpreter, env: &mut Environment) -> RuntimeResult<Value> {
         let cond = self.conditional.evaluate(interpreter, env)?;
         match cond {
             Value::BOOL(v) => {
@@ -134,7 +136,7 @@ impl Visit for IfStatement {
 }
 
 impl Visit for Function {
-    fn evaluate(&self, _interpreter: &mut Interpreter, env: &mut Environment) -> Result<Value, RuntimeError> {
+    fn evaluate(&self, _interpreter: &mut Interpreter, env: &mut Environment) -> RuntimeResult<Value> {
         let function = Value::Callable(FunctionTypes::new_function(self.clone(), env.clone()));
         env.define(self.name.lexeme.clone(), Some(function));
         Ok(Value::Nil)
@@ -143,7 +145,7 @@ impl Visit for Function {
 
 
 impl Visit for Expr {
-    fn evaluate(&self, interpreter: &mut Interpreter, env: &mut Environment) -> Result<Value, RuntimeError> {
+    fn evaluate(&self, interpreter: &mut Interpreter, env: &mut Environment) -> RuntimeResult<Value> {
         match self {
             Expr::L(ref inside_val)     => inside_val.evaluate(interpreter, env),
             Expr::B(ref inside_val)     => inside_val.evaluate(interpreter, env),
@@ -164,7 +166,7 @@ impl Visit for Expr {
 }
 
 impl Visit for Literal {
-    fn evaluate(&self, _interpreter: &mut Interpreter, _env: &mut Environment) -> Result<Value, RuntimeError> {
+    fn evaluate(&self, _interpreter: &mut Interpreter, _env: &mut Environment) -> RuntimeResult<Value> {
         if self.val.parse::<f64>().is_ok() {
             Ok(Value::NUMBER(self.val.parse::<f64>().unwrap()))
         }
@@ -187,7 +189,7 @@ impl Visit for Literal {
 }
 
 impl Visit for Binary {
-    fn evaluate(&self, interpreter: &mut Interpreter, env: &mut Environment) -> Result<Value, RuntimeError> {
+    fn evaluate(&self, interpreter: &mut Interpreter, env: &mut Environment) -> RuntimeResult<Value> {
         let right: Value = self.right.evaluate(interpreter, env)?;
         let left: Value = self.left.evaluate(interpreter, env)?;
         
@@ -209,7 +211,7 @@ impl Visit for Binary {
 }
 
 impl Visit for Unary {
-    fn evaluate(&self, interpreter: &mut Interpreter, env: &mut Environment) -> Result<Value, RuntimeError> {
+    fn evaluate(&self, interpreter: &mut Interpreter, env: &mut Environment) -> RuntimeResult<Value> {
         let expr: Value = self.expr.evaluate(interpreter, env)?;
 
         match self.operator.token_type {
@@ -226,7 +228,7 @@ impl Visit for Unary {
 }
 
 impl Visit for Conditional {
-    fn evaluate(&self, interpreter: &mut Interpreter, env: &mut Environment) -> Result<Value, RuntimeError> {
+    fn evaluate(&self, interpreter: &mut Interpreter, env: &mut Environment) -> RuntimeResult<Value> {
         let cond: Value = self.cond.evaluate(interpreter, env)?;
 
         match cond {
@@ -242,7 +244,7 @@ impl Visit for Conditional {
 }
 
 impl Visit for Logical {
-    fn evaluate(&self, interpreter: &mut Interpreter, env: &mut Environment) -> Result<Value, RuntimeError> {
+    fn evaluate(&self, interpreter: &mut Interpreter, env: &mut Environment) -> RuntimeResult<Value> {
         let left: Value = self.left.evaluate(interpreter, env)?;
         match self.tok.token_type {
             TokenType::Or => {
@@ -268,7 +270,7 @@ impl Visit for Logical {
 }
 
 impl Visit for Call {
-    fn evaluate(&self, interpreter: &mut Interpreter, env: &mut Environment) -> Result<Value, RuntimeError> {
+    fn evaluate(&self, interpreter: &mut Interpreter, env: &mut Environment) -> RuntimeResult<Value> {
         let callee = self.callee.evaluate(interpreter, env)?;
         let arguments: Vec<Value> = self.args.iter().map(|arg| arg.evaluate(interpreter, env).unwrap()).collect::<Vec<Value>>();
         if let Value::Callable(callable) = callee {
@@ -284,7 +286,7 @@ impl Visit for Call {
 
 
 impl Visit for Grouping {
-    fn evaluate(&self, interpreter: &mut Interpreter, env: &mut Environment) -> Result<Value, RuntimeError> {
+    fn evaluate(&self, interpreter: &mut Interpreter, env: &mut Environment) -> RuntimeResult<Value> {
         Ok(self.expr.evaluate(interpreter, env)?)
     }
 }
@@ -307,12 +309,17 @@ impl Value {
     pub fn new_str_function(func: StrLib) -> Value {
         Value::Callable(FunctionTypes::str_lib_func(func))
     }
+
+    pub fn new_test_function(func: TestLib) -> Value {
+        Value::Callable(FunctionTypes::test_lib_func(func))
+    }
+    
 }
 
 
 
 
-fn check_numbers(paris: (Value, Value), op: &Token) -> Result<Value, RuntimeError> {
+fn check_numbers(paris: (Value, Value), op: &Token) -> RuntimeResult<Value> {
     match paris {
         (Value::NUMBER(left), Value::NUMBER(right)) => {
             match op.token_type {
@@ -335,7 +342,7 @@ fn check_numbers(paris: (Value, Value), op: &Token) -> Result<Value, RuntimeErro
 // Two cases:
 // left and right are strings               =>combine the strings 
 // left is a string and right is a int      => combine the string and int into a string
-fn concatenate_values(pairs: (Value, Value), token: &Token) -> Result<Value, RuntimeError> {
+fn concatenate_values(pairs: (Value, Value), token: &Token) -> RuntimeResult<Value> {
     match pairs {
         (Value::STRING(mut v), Value::STRING(v2)) => {
             v.push_str(&v2);
@@ -355,7 +362,7 @@ fn concatenate_values(pairs: (Value, Value), token: &Token) -> Result<Value, Run
 }
 
 
-fn determine_equality(pair: (Value, Value), token: &Token) -> Result<Value, RuntimeError> {
+fn determine_equality(pair: (Value, Value), token: &Token) -> RuntimeResult<Value> {
     match token.token_type {
         TokenType::EqualEqual => {
              match pair {
@@ -379,7 +386,7 @@ fn determine_equality(pair: (Value, Value), token: &Token) -> Result<Value, Runt
     }
 }
 
-fn determine_int_comparison(pair: (Value, Value), token: &Token) -> Result<Value, RuntimeError> {
+fn determine_int_comparison(pair: (Value, Value), token: &Token) -> RuntimeResult<Value> {
     match pair {
         (Value::NUMBER(val), Value::NUMBER(val2)) => {
             match token.token_type {
