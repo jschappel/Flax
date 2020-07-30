@@ -12,10 +12,10 @@ pub enum TestLib {
 }
 
 impl Callable for TestLib {
-    fn call(&self, _interpreter: &mut Interpreter, args: Vec<Value>, _env: &mut Environment) -> RuntimeResult<Value> {
+    fn call(&self, _interpreter: &mut Interpreter, args: Vec<Value>, _env: &mut Environment, line: u64) -> RuntimeResult<Value> {
         match self {
-            TestLib::Assert => assert(&args[0]),
-            TestLib::AssertEq => assert_eq(&args[0], &args[1]),
+            TestLib::Assert => assert(&args[0], line),
+            TestLib::AssertEq => assert_eq(&args[0], &args[1], line),
         }
     }
 
@@ -28,17 +28,17 @@ impl Callable for TestLib {
 }
 
 
-fn assert(given: &Value) -> RuntimeResult<Value> {
+fn assert(given: &Value, line: u64) -> RuntimeResult<Value> {
     if is_truthy(given) {
         Ok(Value::BOOL(true))
     } else {
-        Err(RuntimeError::AssertError(Value::BOOL(true), given.clone(), 1000))
+        Err(RuntimeError::AssertError(Value::BOOL(true), given.clone(), line))
     }
 }
 
-fn assert_eq(given: &Value, expected: &Value) -> RuntimeResult<Value> {
+fn assert_eq(given: &Value, expected: &Value, line: u64) -> RuntimeResult<Value> {
     if given != expected {
-        Err(RuntimeError::AssertError(expected.clone(), given.clone(), 1000))
+        Err(RuntimeError::AssertError(expected.clone(), given.clone(), line))
     } else {
         Ok(Value::Nil)
     }

@@ -19,17 +19,17 @@ pub struct Interpreter {
 
 impl Interpreter {
     pub fn new() -> Interpreter {
-        let globals = Self::create_environment();
-        let environment = globals.clone();
+        let globals = Environment::new(); //TODO: separate std lib env from normal env;
+        let environment = Self::create_environment();
         Interpreter { globals, environment }
     }
 
     pub fn interpret(&mut self, statements: Vec<Stmt>) -> RuntimeResult<()> {
-        let mut globals = self.globals.clone();
-
+        let mut temp_env = self.environment.clone();
         for statement in statements {
-            statement.evaluate(self, &mut globals)?;
+            statement.evaluate(self, &mut temp_env)?;
         }
+        self.environment = temp_env;
         Ok(())
     }
 /*
@@ -272,18 +272,25 @@ impl Visit for Logical {
 impl Visit for Call {
     fn evaluate(&self, interpreter: &mut Interpreter, env: &mut Environment) -> RuntimeResult<Value> {
         let callee = self.callee.evaluate(interpreter, env)?;
-        let arguments: Vec<Value> = self.args.iter().map(|arg| arg.evaluate(interpreter, env).unwrap()).collect::<Vec<Value>>();
+        let arguments = evaluate_args(self.args.clone(), interpreter, env)?;
         if let Value::Callable(callable) = callee {
             if callable.arity() != self.args.len() as u8 {
                 return Err(RuntimeError::str_error(&self.tok, "Invalid callee"))
             }
-           return Ok(callable.call(interpreter, arguments, env)?)       
+           return Ok(callable.call(interpreter, arguments, env, self.tok.line)?)       
         }
-        Err(RuntimeError::no_token_error("", String::from("Can only call functions"), 10)) //TODO: Better error handling
+        Err(RuntimeError::no_token_error("", String::from("Can only call functions"), self.tok.line)) //TODO: Better error handling
     }
 }
 
-
+fn evaluate_args(args: Vec<Expr>, interpreter: &mut Interpreter, env: &mut Environment) -> Result<Vec<Value>, RuntimeError> {
+    let mut values = vec![];
+    for arg in args {
+        let value = arg.evaluate(interpreter, env)?;
+        values.push(value);
+    }
+    Ok(values)
+}
 
 impl Visit for Grouping {
     fn evaluate(&self, interpreter: &mut Interpreter, env: &mut Environment) -> RuntimeResult<Value> {

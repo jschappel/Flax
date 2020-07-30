@@ -19,7 +19,7 @@ I have always been fascinated with programing languages and the different advant
 
 <funDecl>       ::= "fn" <function>
 
-<function>      ::= IDENTIFIER "(" parameters? ")" <block>
+<function>      ::= IDENTIFIER "(" <parameters>? ")" <block>
 
 <parameters>    ::= IDENTIFIER ( "," IDENTIFIER )*
 
@@ -32,7 +32,7 @@ I have always been fascinated with programing languages and the different advant
                  | <break>
                  | <returnStmt>
 
-<returnStmt>     | "return" expression? ";"
+<returnStmt>    ::= "return" <expression>? ";"
 
 <break>         ::= "break" ";"
 
@@ -40,9 +40,9 @@ I have always been fascinated with programing languages and the different advant
 
 <whileStmt>     ::= "while" <expression> <block>
 
-<block>         ::= "{" declaration* "}"
+<block>         ::= "{" <declaration>* "}"
 
-<exprStmt>      ::= expression ";"
+<exprStmt>      ::= <expression> ";"
 
 <expression>    ::= <binary>
                  | <unary>
@@ -81,7 +81,7 @@ I have always been fascinated with programing languages and the different advant
 
 <equality>          ::= <comparison> ( ( '==' | '!=' ) <comparison> )*
 
-<comparison>        ::= <addition> ( ('>' | '<' | '>=' '<=' ) <addition> )*
+<comparison>        ::= <addition> ( ('>' | '<' | '>=' | '<=' ) <addition> )*
 
 <addition>          ::= <multiplication> ( ( '+' | '-' ) <multiplication> )*
 
@@ -90,9 +90,9 @@ I have always been fascinated with programing languages and the different advant
 <unary>             ::= ( '-' | '!' ) <unary>
                      | <call>
 
-<call>              ::= <literal> ( "(" arguments? ")" )*
+<call>              ::= <literal> ( "(" <arguments>? ")" )*
 
-<arguments>         ::= <expression> ( "," expression )*
+<arguments>         ::= <expression> ( "," <expression> )*
 
 <literal>           ::= NUMBER | STRING | true | false | nil
                      | "(" <expression> ")" 
@@ -142,7 +142,7 @@ I have always been fascinated with programing languages and the different advant
     4 - 1;
     ```
 
-- logic operators:
+- Logic Operators:
     ```javascript
     true and true   // true
     false or true   // true 
@@ -160,23 +160,23 @@ I have always been fascinated with programing languages and the different advant
     ```
 
 
-- string concatenation
+- String Concatenation
     ```haskell
     "Foo" ++ "Bar";
     "Foo" ++ 1; 
     ```
 
-- declare a variable: 
+- Declare a Variable: 
     ```javascript
     let x = 10;
     ```
-- assignment:
+- Assignment:
     ```javascript
     let x = 70;
     x = 2;
     ```
 
-- scoping: 
+- Scoping: 
     ```javascript
     let x = 10;
     let y = 20;
@@ -186,7 +186,7 @@ I have always been fascinated with programing languages and the different advant
     }
     ```
 
-- conditionals: 
+- Conditionals: 
     ```rust
     if x < 10 {
         return true;
@@ -199,24 +199,24 @@ I have always been fascinated with programing languages and the different advant
     }
     ```
 
-- ternary operator:
+- Ternary Operator:
     ```javascript
     5 > 6 ? true : false
     ```
 
-- print to console:
+- Print to Console:
     ```rust 
     print("Hello");     // Prints hello
     println("Hello")    // Prints hello on a new line
     ```
 
-- incrementing:
+- Incrementing:
     ```rust
     let i = 10;
     i += 2;      // i is now 12
     i -= 1;      // i is now 11
 
-- looping:
+- Looping:
     ```rust
     let x = 10;
     while x < 20 {
@@ -225,7 +225,7 @@ I have always been fascinated with programing languages and the different advant
     }
     ```
 
-- functions: 
+- Functions: 
     ```rust
     func factorial(x) {
         if x < 2 {

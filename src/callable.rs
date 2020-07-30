@@ -15,7 +15,7 @@ use ast::Function as AstFunc;
 
 
 pub trait Callable {
-    fn call(&self, interpreter: &mut Interpreter, args: Vec<Value>, env: &mut Environment) -> Result<Value, RuntimeError>;
+    fn call(&self, interpreter: &mut Interpreter, args: Vec<Value>, env: &mut Environment, line: u64) -> Result<Value, RuntimeError>;
     fn arity(&self) -> u8;
 }
 
@@ -46,12 +46,12 @@ impl FunctionTypes {
 }
 
 impl FunctionTypes {
-    pub fn call(&self, interpreter: &mut Interpreter, args: Vec<Value>, env: &mut Environment) -> Result<Value, RuntimeError> {
+    pub fn call(&self, interpreter: &mut Interpreter, args: Vec<Value>, env: &mut Environment, line: u64) -> Result<Value, RuntimeError> {
         match self {
-            FunctionTypes::Function(func) => func.call(interpreter, args, env),
-            FunctionTypes::NativeFunction(func) => func.call(interpreter, args, env),
-            FunctionTypes::StringLibrary(func) => func.call(interpreter, args, env),
-            FunctionTypes::TestLibrary(func) => func.call(interpreter, args, env),
+            FunctionTypes::Function(func) => func.call(interpreter, args, env, line),
+            FunctionTypes::NativeFunction(func) => func.call(interpreter, args, env, line),
+            FunctionTypes::StringLibrary(func) => func.call(interpreter, args, env, line),
+            FunctionTypes::TestLibrary(func) => func.call(interpreter, args, env, line),
         }
     }
 
@@ -82,7 +82,7 @@ impl FlaxFunction {
 
 
 impl Callable for FlaxFunction {
-    fn call(&self, interpreter: &mut Interpreter, args: Vec<Value>, _env: &mut Environment) -> Result<Value, RuntimeError> {
+    fn call(&self, interpreter: &mut Interpreter, args: Vec<Value>, _env: &mut Environment, line: u64) -> Result<Value, RuntimeError> {
         // println!("{:#?}", self.closure); //Todo: CLEAN UP
         //println!("{:#?}", env);
         let mut env = self.closure.clone().new_lexical();

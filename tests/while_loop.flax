@@ -5,3 +5,5 @@ while number < end {
   println("The number is: " ++ number);
   number+=1;  
 }
+
+assertEq(20, 20);

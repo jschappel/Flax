@@ -32,11 +32,11 @@ impl NativeFunctions {
 }
 
 impl Callable for NativeFunctions {
-    fn call(&self, interpreter: &mut Interpreter, args: Vec<Value>, env: &mut Environment) -> Result<Value, RuntimeError> {
+    fn call(&self, interpreter: &mut Interpreter, args: Vec<Value>, env: &mut Environment, line: u64) -> Result<Value, RuntimeError> {
         match self {
             NativeFunctions::Clock => clock(),
-            NativeFunctions::Println(expr) => expr.call(interpreter, args, env),
-            NativeFunctions::Print(expr) => expr.call(interpreter, args, env), 
+            NativeFunctions::Println(expr) => expr.call(interpreter, args, env, line),
+            NativeFunctions::Print(expr) => expr.call(interpreter, args, env, line), 
         }
     }
     fn arity(&self) -> u8 {
@@ -55,7 +55,7 @@ fn clock() -> Result<Value, RuntimeError> {
 }
 
 impl Callable for Print {
-    fn call(&self, _interpreter: &mut Interpreter, args: Vec<Value>, _env: &mut Environment) -> Result<Value, RuntimeError> {
+    fn call(&self, _interpreter: &mut Interpreter, args: Vec<Value>, _env: &mut Environment, _line: u64) -> Result<Value, RuntimeError> {
         if args.len() < 1 {
             print!("");
             return Ok(Value::Nil)
@@ -70,7 +70,7 @@ impl Callable for Print {
 }
 
 impl Callable for Println {
-    fn call(&self, _interpreter: &mut Interpreter, args: Vec<Value>, _env: &mut Environment) -> Result<Value, RuntimeError> {
+    fn call(&self, _interpreter: &mut Interpreter, args: Vec<Value>, _env: &mut Environment, _line: u64) -> Result<Value, RuntimeError> {
         if args.len() < 1 {
             println!("");
             return Ok(Value::Nil)

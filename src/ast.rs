@@ -216,6 +216,7 @@ pub struct Call {
 
 
 
+
 // Implement Display for each struct in the Abstract Syntax Tree so we can debug the tree if needed
 impl Display for Expr {
     fn fmt(&self, f: &mut fmt::Formatter<>) -> fmt::Result {
@@ -294,6 +295,3 @@ impl Display for Stmt {
         }
     }
 }
-
-
-

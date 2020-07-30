@@ -7,6 +7,7 @@ use std::io;
 use std::io::Write;
 use std::env;
 use parser::{Parser};
+use interpreter::Interpreter;
 use colored::*;
 
 type ReplResult = std::result::Result<(), ComplierError>;
@@ -33,12 +34,15 @@ pub fn run_repl() {
 
     println!("{}", "Welcome to Flax! v0.1".purple());
     let mut mode = ReplMode::Normal;
+    let mut interpreter = Interpreter::new();
+
     loop {
         let mut buffer = String::new();
         print!(">>>");
         io::stdout().flush().expect("Unable to flush buffer");
         let _stdin = io::stdin().read_line(&mut buffer).unwrap();
         let buffer = buffer.trim();
+
 
         // Evaluate the command
         match buffer {
@@ -55,7 +59,7 @@ pub fn run_repl() {
                 println!("{}", "Now in normal mode".yellow());
             },
             _ => {
-                if let Err(e) = evaluate(buffer, &mode) {
+                if let Err(e) = evaluate(buffer, &mode, &mut interpreter) {
                     println!("{}", e.to_string().red());
                 }
             },
@@ -63,18 +67,18 @@ pub fn run_repl() {
     }
 }
 
-fn evaluate(stmt: &str, repl_mode: &ReplMode) -> ReplResult {
+fn evaluate(stmt: &str, repl_mode: &ReplMode, interpreter: &mut Interpreter) -> ReplResult {
     match repl_mode {
-        ReplMode::Normal => parse_statement(stmt),
-        ReplMode::Debug => debug_parse_statement(stmt),
+        ReplMode::Normal => interpret_stmt(stmt, interpreter),
+        ReplMode::Debug => debug_parse_expr(stmt),
     }
 }
 
 
-fn parse_statement(stmt: &str) -> ReplResult {
+fn interpret_stmt(stmt: &str, interpreter: &mut Interpreter) -> ReplResult {
     let tokens = lexer::lex_line(stmt.to_string())?;
     let ast = Parser::new(tokens).parse()?;
-    interpreter::Interpreter::new().interpret(ast)?;
+    interpreter.interpret(ast)?;
     Ok(())
 }
 
@@ -87,7 +91,7 @@ fn interpret_file(filename: &str) -> ReplResult {
 
 /// Prints the ast that the parser produces for a expression
 // TODO: Remove
-fn debug_parse_statement(input: &str) -> ReplResult {
+fn debug_parse_expr(input: &str) -> ReplResult {
     let tokens = lexer::lex_line(input.to_string())?;
     let expr = Parser::new(tokens).parse_expression()?;
     println!("{}", expr);
