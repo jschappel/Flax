@@ -1,0 +1,11 @@
+func factorial(number) {
+    if number <= 1 {
+        return 1;
+    }
+    return number * factorial(number - 1);
+}
+
+let factFive = factorial(5);
+
+println(factFive);
+assertEq(factFive, 120);
