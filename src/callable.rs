@@ -82,13 +82,13 @@ impl FlaxFunction {
 
 
 impl Callable for FlaxFunction {
-    fn call(&self, interpreter: &mut Interpreter, args: Vec<Value>, _env: &mut Environment, line: u64) -> Result<Value, RuntimeError> {
-        // println!("{:#?}", self.closure); //Todo: CLEAN UP
-        //println!("{:#?}", env);
+    fn call(&self, interpreter: &mut Interpreter, args: Vec<Value>, _env: &mut Environment, _line: u64) -> Result<Value, RuntimeError> {
         let mut env = self.closure.clone().new_lexical();
+        let func_name = &self.declaration.name.lexeme;
         for (i, token) in self.declaration.params.iter().enumerate() {
             env.define(token.lexeme.clone(), Some(args[i].clone()))
         }
+        env.define(func_name.clone(), Some(Value::Callable(FunctionTypes::Function(self.clone()))));
         
         let value = execute_block(&self.declaration.body, interpreter, &mut env);
         match value {
