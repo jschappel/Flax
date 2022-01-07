@@ -126,9 +126,9 @@ I have always been fascinated with programing languages and the different advant
 - [X] Add basic native functions to the language
 - [X] Add string library
 - [X] Add testing library
+- [X] Make the language turing complete
 - [ ] Add anonymous functions to the language
 - [ ] Add lists to the language
-- [ ] Make the language turing complete
 - [ ] Add immutable variables to the language
 - [ ] Add Structures to the language
 
